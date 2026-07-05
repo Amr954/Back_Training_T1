@@ -1,0 +1,4 @@
+2026-07-04 01-35-45 | WARN | "userName" must only contain alpha-numeric characters
+2026-07-04 01-36-04 | WARN | Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.
+2026-07-04 15-33-44 | ERROR | Cannot read properties of undefined (reading 'findById')
+2026-07-04 15-39-35 | ERROR | Cannot read properties of undefined (reading 'findById')
