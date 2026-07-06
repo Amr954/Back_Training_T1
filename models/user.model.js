@@ -3,6 +3,15 @@ const bcryptjs = require('bcryptjs')
 const { boolean } = require('joi')
 const Schema = mongoose.Schema
 
+const addressSchema = new Schema({
+    fullName: String,
+    phone:String,
+    country:String,
+    city: String,
+    street:String,
+    postalCode: String,
+},{_id:false})
+
 const userSchema = new Schema({
 
     userName: {
@@ -39,9 +48,7 @@ const userSchema = new Schema({
         default: "customer"
     },
 
-    addresses: {
-        type: String
-    },
+    addresses: [addressSchema],
 
     wishlist: [
         {

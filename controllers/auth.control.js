@@ -188,10 +188,14 @@ const userController = {
 
     resetPassword: async (req, res) => {
         try {
-            const { email, token, newPassword } = req.body
+            const { token, newPassword } = req.body
             console.log("BODY:", req.body)
 
-            const user = await User.findOne({ email })
+            const hashedIncomingToken = crypto.createHash("sha256").update(token).digest("hex")
+            const user = await User.findOne({ 
+                resetPasswordToken:hashedIncomingToken,
+                resetPasswordExpires:{$gt:Date.now()} 
+            })
             if (!user || !user.resetPasswordToken || !user.resetPasswordExpires) {
                 return res.status(400).send({ message: "invalid or expired reset link" })
             }
@@ -200,7 +204,6 @@ const userController = {
                 return res.status(400).send({ message: "reset link expired" })
             }
 
-            const hashedIncomingToken = crypto.createHash("sha256").update(token).digest("hex")
             if (hashedIncomingToken !== user.resetPasswordToken) {
                 // console.log("FAILED AT CHECK 2 - TOKEN MISMATCH")
                 return res.status(400).send({ message: "invalid or expired reset link" })

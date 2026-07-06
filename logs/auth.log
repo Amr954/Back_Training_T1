@@ -2,3 +2,19 @@
 2026-07-04 01-36-04 | WARN | Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.
 2026-07-04 15-33-44 | ERROR | Cannot read properties of undefined (reading 'findById')
 2026-07-04 15-39-35 | ERROR | Cannot read properties of undefined (reading 'findById')
+2026-07-06 10-26-40 | WARN | ["\"email\" is required"]
+2026-07-06 10-26-57 | WARN | ["Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character."]
+2026-07-06 10-28-14 | WARN | ["Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character."]
+2026-07-06 10-31-09 | WARN | ["Password must be 8 characters contain at least one uppercase letter, one lowercase letter, one number, and one special character."]
+2026-07-06 10-31-31 | WARN | ["Password must be 8 characters, and contain at least one uppercase letter, one lowercase letter, one number, and one special character."]
+2026-07-06 10-33-22 | WARN | ["\"otp\" is required"]
+2026-07-06 10-34-38 | WARN | ["\"password\" with value \"Aa1234$\" fails to match the required pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,30}$/"]
+2026-07-06 10-35-27 | WARN | ["\"password\" with value \"Aa1234$\" fails to match the required pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,30}$/"]
+2026-07-06 10-38-02 | WARN | ["\"email\" is required"]
+2026-07-06 10-39-38 | WARN | ["\"email\" is not allowed"]
+2026-07-06 10-40-39 | WARN | ["\"token\" is not allowed"]
+2026-07-06 10-45-08 | WARN | ["\"token\" is not allowed"]
+2026-07-06 10-45-18 | WARN | ["\"email\" is not allowed"]
+2026-07-06 10-47-30 | WARN | ["\"email\" is not allowed"]
+2026-07-06 10-54-12 | WARN | ["\"newPassword\" is not allowed"]
+2026-07-06 14-32-12 | WARN | ["\"userName\" is not allowed"]
