@@ -18,3 +18,5 @@
 2026-07-06 10-47-30 | WARN | ["\"email\" is not allowed"]
 2026-07-06 10-54-12 | WARN | ["\"newPassword\" is not allowed"]
 2026-07-06 14-32-12 | WARN | ["\"userName\" is not allowed"]
+2026-07-07 15-37-37 | WARN | ["\"password\" is not allowed"]
+2026-07-07 15-39-13 | WARN | ["\"password\" is required","\"oldpassword\" is not allowed"]

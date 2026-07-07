@@ -81,5 +81,13 @@ userSchema.pre('save', async function () {
         console.error(err);
     }
 })
+
+userSchema.methods.compareUserPass = async function(pass){
+    const user = this
+    return await bcryptjs.compare(pass , user.password)
+}
+
 const User = mongoose.model('user', userSchema)
+userSchema.index({ userName: 1 });
+userSchema.index({ role: 1 });
 module.exports =  User

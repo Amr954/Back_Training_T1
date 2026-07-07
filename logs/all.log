@@ -91,3 +91,10 @@
 2026-07-06 14-01-32 | INFO | amrredazahaar@gmail.com
 2026-07-06 14-02-21 | INFO | amrredazahaar@gmail.com
 2026-07-06 14-32-12 | WARN | ["\"userName\" is not allowed"]
+2026-07-07 15-37-37 | WARN | ["\"password\" is not allowed"]
+2026-07-07 15-39-13 | WARN | ["\"password\" is required","\"oldpassword\" is not allowed"]
+2026-07-07 15-45-50 | ERROR | Cannot read properties of null (reading 'password')
+2026-07-07 15-46-07 | ERROR | Cannot read properties of null (reading 'password')
+2026-07-07 18-15-59 | ERROR | Must supply api_secret
+2026-07-07 18-17-23 | ERROR | Must supply api_secret
+2026-07-07 18-17-26 | ERROR | Must supply api_secret

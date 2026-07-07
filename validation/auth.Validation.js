@@ -52,10 +52,20 @@ const resetPasswordSchema = Joi.object({
     )
 })
 
+const changePasswordSchema = Joi.object({
+    oldPassword: Joi.string().pattern(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$/
+    ).required(),
+    newPassword: Joi.string().pattern(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$/
+    )
+})
+
 module.exports = {
     newUserSchema,
     verifyOtpSchema,
     logInSchema,
     forgotPasswordSchema,
-    resetPasswordSchema
+    resetPasswordSchema,
+    changePasswordSchema
 }
