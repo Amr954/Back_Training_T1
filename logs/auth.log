@@ -21,3 +21,4 @@
 2026-07-07 15-37-37 | WARN | ["\"password\" is not allowed"]
 2026-07-07 15-39-13 | WARN | ["\"password\" is required","\"oldpassword\" is not allowed"]
 2026-07-08 15-58-05 | WARN | ["\"password\" with value \"Aa12345678\" fails to match the required pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,30}$/"]
+2026-07-08 18-02-55 | WARN | ["\"role\" is not allowed"]

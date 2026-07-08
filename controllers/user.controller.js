@@ -10,7 +10,7 @@ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const userController = {
     addUser: async (req, res) => {
         try {
-            const userFields = ["userName", "email", "address", "phone", "role", "isVerified"]
+            const userFields = ["userName", "email","address", "phone", "role", "isVerified","password"]
 
             const userData = {}
             userFields.forEach(field => {

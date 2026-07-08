@@ -77,3 +77,7 @@
 2026-07-07 18-17-23 | ERROR | Must supply api_secret
 2026-07-07 18-17-26 | ERROR | Must supply api_secret
 2026-07-08 16-07-25 | ERROR | cloudinary is not defined
+2026-07-08 18-21-38 | ERROR | Cannot read properties of undefined (reading 'userName')
+2026-07-08 18-22-21 | ERROR | Cannot read properties of undefined (reading 'userName')
+2026-07-08 18-28-27 | ERROR | user validation failed: password: Path `password` is required.
+2026-07-08 18-30-25 | ERROR | E11000 duplicate key error collection: test.users index: email_1 dup key: { email: "omar@gmail.com" }
