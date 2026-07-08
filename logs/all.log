@@ -98,3 +98,5 @@
 2026-07-07 18-15-59 | ERROR | Must supply api_secret
 2026-07-07 18-17-23 | ERROR | Must supply api_secret
 2026-07-07 18-17-26 | ERROR | Must supply api_secret
+2026-07-08 15-58-05 | WARN | ["\"password\" with value \"Aa12345678\" fails to match the required pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,30}$/"]
+2026-07-08 16-07-25 | ERROR | cloudinary is not defined

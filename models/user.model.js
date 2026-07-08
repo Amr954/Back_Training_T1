@@ -5,12 +5,12 @@ const Schema = mongoose.Schema
 
 const addressSchema = new Schema({
     fullName: String,
-    phone:String,
-    country:String,
+    phone: String,
+    country: String,
     city: String,
-    street:String,
+    street: String,
     postalCode: String,
-},{_id:false})
+}, { _id: false })
 
 const userSchema = new Schema({
 
@@ -39,7 +39,8 @@ const userSchema = new Schema({
     },
 
     avatar: {
-        type: String
+        url: { type: String },
+        publicId: { type: String }
     },
 
     role: {
@@ -64,9 +65,9 @@ const userSchema = new Schema({
             required: true,
         }],
 
-    isVerified:{type: Boolean,default:false},
-    resetPasswordToken:{type: String},
-    resetPasswordExpires:{type: Date}
+    isVerified: { type: Boolean, default: false },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date }
 })
 
 userSchema.pre('save', async function () {
@@ -82,12 +83,12 @@ userSchema.pre('save', async function () {
     }
 })
 
-userSchema.methods.compareUserPass = async function(pass){
+userSchema.methods.compareUserPass = async function (pass) {
     const user = this
-    return await bcryptjs.compare(pass , user.password)
+    return await bcryptjs.compare(pass, user.password)
 }
 
 const User = mongoose.model('user', userSchema)
 userSchema.index({ userName: 1 });
 userSchema.index({ role: 1 });
-module.exports =  User
+module.exports = User

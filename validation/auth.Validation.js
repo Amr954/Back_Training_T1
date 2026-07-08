@@ -61,11 +61,37 @@ const changePasswordSchema = Joi.object({
     )
 })
 
+const addUserSchema = Joi.object({
+    userName: Joi.string().required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().min(8).required(),
+    phone: Joi.string().optional(),
+    address: Joi.string().optional(),
+    role: Joi.string().valid('admin', 'customer').optional(),
+    isVerified: Joi.boolean().optional()
+})
+
+const updateUserSchema = Joi.object({
+    userName: Joi.string().optional(),
+    email:Joi.string().email().optional(),
+    phone:Joi.string().optional(),
+    avatar:Joi.string().optional(),
+    address:Joi.string().optional(),
+    isVerified: Joi.boolean().optional()
+})
+
+const changeRoleSchema = Joi.object({
+    role: Joi.string().valid('admin', 'customer').required()
+})
+
 module.exports = {
     newUserSchema,
     verifyOtpSchema,
     logInSchema,
     forgotPasswordSchema,
     resetPasswordSchema,
-    changePasswordSchema
+    changePasswordSchema,
+    addUserSchema,
+    updateUserSchema,
+    changeRoleSchema
 }
