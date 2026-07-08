@@ -292,6 +292,33 @@ const userController = {
             logger.error(err.message)
             res.status(500).send({ message: err.message })
         }
-    }
+    },
+
+    changeUserRole: async (req, res) => {
+            try {
+                const { role } = req.body
+                if (req.user.role === req.params.role) {
+                    return res.status(400).json({ message: "You cannot change your own role" })
+                }
+                const user = await User.findByIdAndUpdate(req.params.id,
+                    { role },
+                    { new: true, runValidators: true }
+                ).select('-password -tokens -resetPasswordToken -resetPasswordExpires')
+                if (!user) {
+                    { return res.status(404).json({ message: "user not found." }) }
+                }
+                res.status(200).json({
+                    success: true,
+                    message: `Role updated to ${role} for user ${user.userName}`,
+                    data: user
+                })
+            } catch (err) {
+                logger.error(err.message)
+                res.status(400).send({
+                    message: err.message
+                })
+            }
+        },
+    
 }
 module.exports = userController

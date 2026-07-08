@@ -6,9 +6,10 @@ const {
     logInSchema, 
     verifyOtpSchema, 
     forgotPasswordSchema, 
-    resetPasswordSchema, } = require('../validation/auth.Validation')
+    resetPasswordSchema,
+    changeRoleSchema, } = require('../validation/auth.Validation')
 const validate = require('../middleware/validate.middleware')
-const { authentication } = require('../middleware/auth.middleware')
+const { authentication, adminAuthorization } = require('../middleware/auth.middleware')
 
 router.post('/register/send-otp',validate(newUserSchema),authController.sendOtp)
 router.post('/verify-otp',validate(verifyOtpSchema) ,authController.verifyOtp)
@@ -18,6 +19,6 @@ router.post("/forgot-password/verify-otp", validate(resetPasswordSchema),authCon
 router.get('/me', authentication,authController.getUser)
 router.post("/logout",authentication,authController.logOut);
 router.post('/refresh', authController.refresh)
-
+router.patch('/change-role/:id', adminAuthorization, validate(changeRoleSchema), authController.changeUserRole)
 
 module.exports = router

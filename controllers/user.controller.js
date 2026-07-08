@@ -35,7 +35,7 @@ const userController = {
     getAllUsers: async (req, res) => {
         try {
             const page = Math.max(parseInt(req.query.page) || 1, 1)
-            const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100) // default 20 user max 100
+            const limit = Math.min(Math.max(parseInt(req.query.limit) || 5, 1), 100) // default 5 user max 100
             const skip = (page - 1) * limit
             const { search, role } = req.query
             const filter = {}
@@ -171,32 +171,7 @@ const userController = {
     },
 
 
-    changeUserRole: async (req, res) => {
-        try {
-            const { role } = req.body
-            if (req.user.role === req.params.role) {
-                return res.status(400).json({ message: "You cannot change your own role" })
-            }
-            const user = await User.findByIdAndUpdate(req.params.id,
-                { role },
-                { new: true, runValidators: true }
-            ).select('-password -tokens -resetPasswordToken -resetPasswordExpires')
-            if (!user) {
-                { return res.status(404).json({ message: "user not found." }) }
-            }
-            res.status(200).json({
-                success: true,
-                message: `Role updated to ${role} for user ${user.userName}`,
-                data: user
-            })
-        } catch (err) {
-            logger.error(err.message)
-            res.status(400).send({
-                message: err.message
-            })
-        }
-    },
-
+    
     deleteUser: async (req, res) => {
         try {
             const user = await User.findById(req.params.id);
