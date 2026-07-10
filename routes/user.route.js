@@ -7,7 +7,7 @@ const imageUpload = require('../middleware/uploads.middleware')
 
 const router = express.Router()
 
-router.post('/add',adminAuthorization,validate(addUserSchema),userController.addUser)
+router.post('/add',adminAuthorization,imageUpload.single('avatar'),validate(addUserSchema),userController.addUser)
 router.post('/change-password',authentication,validate(changePasswordSchema),userController.changeUserPassword)
 router.get('/all',adminAuthorization,userController.getAllUsers)
 router.get('/:id',adminAuthorization,userController.getUser)

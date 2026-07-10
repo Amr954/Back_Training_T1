@@ -1,4 +1,5 @@
 const User = require('../models/user.model')
+const bcryptjs = require('bcryptjs')
 const loggerEvent = require('../services/logger.service')
 const { log } = require('winston')
 const logger = loggerEvent('user')
@@ -10,14 +11,27 @@ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const userController = {
     addUser: async (req, res) => {
         try {
-            const userFields = ["userName", "email","address", "phone", "role", "isVerified","password"]
+            const userFields = ["userName", "email", "address", "phone", "role", "isVerified", "password"]
 
+            const existingUser = await User.findOne({ email: req.body.email })
+            if (existingUser) {
+                return res.status(403).send({
+                    message: "Email is already registered !!"
+                })
+            }
             const userData = {}
             userFields.forEach(field => {
                 if (req.body[field] !== undefined) {
                     userData[field] = req.body[field]
                 }
             })
+            if (req.file) {
+                const result = await uploadToCloudinary(req.file.buffer, 'avatars')
+                userData.avatar = {
+                    url: result.secure_url,
+                    publicId: result.public_id
+                }
+            }
             const user = await User.create(userData);
             res.status(201).json({
                 success: true,
@@ -37,10 +51,13 @@ const userController = {
             const page = Math.max(parseInt(req.query.page) || 1, 1)
             const limit = Math.min(Math.max(parseInt(req.query.limit) || 5, 1), 100) // default 5 user max 100
             const skip = (page - 1) * limit
-            const { search, role } = req.query
+            const { search, role, isVerified } = req.query
             const filter = {}
             if (role) {
                 filter.role = role
+            }
+            if (isVerified) {
+                filter.isVerified = isVerified
             }
             if (search) {
                 const safeSearch = escapeRegex(search)
@@ -100,7 +117,7 @@ const userController = {
                 return res.status(403).json({ message: "You are not authorized to do this" })
             }
 
-            const allowedFields = ["userName", "Phone", "Address", "email"]
+            const allowedFields = ["userName", "phone", "address", "email"]
 
             if (req.user.role == 'admin') {
                 allowedFields.push('isVerified')
@@ -116,15 +133,19 @@ const userController = {
             if (req.file) {
                 const existingUser = await User.findById(req.params.id).select('avatar')
 
-                if (existingUser?.avatar?.publicId) {
-                    await cloudinary.uploader.destroy(existingUser.avatar.publicId)
-                }
-
                 const result = await uploadToCloudinary(req.file.buffer, 'avatars')
                 updates.avatar = {
                     url: result.secure_url,
                     publicId: result.public_id
                 }
+
+                if (existingUser?.avatar?.publicId) {
+                    await cloudinary.uploader.destroy(existingUser.avatar.publicId)
+                }
+
+            }
+            if(Object.keys(updates).length === 0){
+                return res.status(400).json({ message: "No valid fields provided to update" })
             }
 
             const user = await User.findByIdAndUpdate(req.params.id, updates, {
@@ -148,10 +169,20 @@ const userController = {
     changeUserPassword: async (req, res) => {
         try {
             const { oldPassword, newPassword } = req.body;
-            const user = await User.findById(req.user.id).select('password')
+            const user = await User.findById(req.user.id).select('+password')
             if (!user) {
                 return res.status(404).json({ message: "Invalid credentials" })
             }
+
+            const existingPassword = await bcryptjs.compare(
+                oldPassword, req.user.password
+            )
+            if (existingPassword) {
+                res.status(400).json({
+                    message: "New password must be different from old one!"
+                })
+            }
+
             const isMatch = await user.compareUserPass(oldPassword)
             if (!isMatch) {
                 return res.status(401).json({ message: "Invalid credentials" });
@@ -170,8 +201,6 @@ const userController = {
         }
     },
 
-
-    
     deleteUser: async (req, res) => {
         try {
             const user = await User.findById(req.params.id);
@@ -185,7 +214,7 @@ const userController = {
                 message: "Account deleted successfully!",
                 data: {}
             })
-        } catch (error) {
+        } catch (err) {
             logger.error(err.message)
             res.status(400).send({
                 message: err.message
