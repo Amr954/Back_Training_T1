@@ -74,4 +74,26 @@ const createProductSchema = Joi.object({
     createdBy: Joi.forbidden()
 })
 
-module.exports = { createProductSchema }
+const updateProductSchema = Joi.object({
+    name: Joi.string().max(200).optional(),
+    shortDescription: Joi.string().max(500).optional(),
+    description: Joi.string().optional(),
+    price: Joi.number().min(0).optional(),
+    discountPrice: Joi.number().min(0).less(Joi.ref('price')).default(0),
+    stock: Joi.number().min(0).optional(),
+    sku: Joi.string().optional(),
+    category: Joi.string().optional(),
+    subcategory: Joi.string().optional(),
+    brand: Joi.string().optional(),
+    tags: Joi.alternatives().try(Joi.array().items(Joi.string()),Joi.string()).optional(),
+    featured: Joi.boolean().optional(),
+    isActive: Joi.boolean().optional(),
+    createdBy: Joi.forbidden(),
+    images: Joi.any().optional(), // Handled by multer
+    imagesToDelete:Joi.string().optional() // JSON array as string
+})
+
+module.exports = { 
+    createProductSchema,
+    updateProductSchema 
+}

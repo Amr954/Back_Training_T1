@@ -151,7 +151,7 @@ const userController = {
             const user = await User.findByIdAndUpdate(req.params.id, updates, {
                 new: true,
                 runValidators: true
-            }).select('-password -tokens -resetPasswordToken -resetPasswordExpires')
+            }).select('+password -tokens -resetPasswordToken -resetPasswordExpires')
 
             if (!user) { return res.status(404).json({ message: "user not found." }) }
             res.status(200).json({

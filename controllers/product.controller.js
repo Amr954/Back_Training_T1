@@ -24,17 +24,25 @@ const uploadImages = async (files, folder = 'products') => {
 
 const productController = {
     // @ Get /products
-    getAllProducts: async (req, res) => {
+    getProducts: async (req, res, next) => {
         try {
             const page = Math.max(parseInt(req.query.page) || 1, 1)
             const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 100)
             const skip = (page - 1) * limit
-            const { category, brand, minPrice, maxPrice, sort } = req.query
+            const { q, category, brand, minPrice, maxPrice, sort, tags, subcategory } = req.query
             const filter = { isActive: true }
 
+            if (q) {
+                filter.$text = { $search: q }
+            }
             if (category) { filter.category = category.toLowerCase() }
+            if (subcategory) { filter.subcategory = subcategory }
             if (brand) { filter.brand = brand }
 
+            if (tags) {
+                const tagList = Array.isArray(tags) ? tags : tags.split(',')
+                filter.tags = { $in: tagList }
+            }
             if (minPrice || maxPrice) {
                 filter.price = {}
                 if (minPrice) filter.price.$gte = Number(minPrice)
@@ -42,12 +50,17 @@ const productController = {
             }
 
             const sortBy = sort ? sort.split(',').join(' ') : '-createdAt'
+            let projection = {}
+            if (q && !sort) {
+                projection = { score: { $meta: 'textScore' } }
+                sortBy = { score: { $meta: 'textScore' } }
+            }
             const [products, totalItems] = await Promise.all([
                 Product.find(filter)
                     .sort(sortBy)
                     .skip(skip)
                     .limit(limit),
-                Product.countDocuments(filter)
+                Product.countDocuments(filter, projection)
             ]);
             res.status(200).json({
                 success: true,
@@ -60,72 +73,12 @@ const productController = {
                     totalPages: Math.ceil(totalItems / limit)
                 }
             });
-        } catch (err) {
-            logger.error(err.message)
-            res.status(500).send({
-                message: err.message
-            })
+        } catch (error) {
+            next(error)
         }
 
     },
 
-    // @ Get /products/search
-
-    searchProducts: async (req, res) => {
-        try {
-            const page = Math.max(parseInt(req.query.page) || 1, 1)
-            const skip = (page - 1) * limit
-            const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 100)
-            const { text, category, brand, minPrice, maxPrice, sort, tags, subategory } = req.query
-            const q = { isActive: true }
-
-            if (text) {
-                q.$text = { $search: text }
-            }
-            if (category) { q.category = category.toLowerCase() }
-            if (brand) { q.brand = brand }
-            if (subcategory) { q.subategory = subategory.toLowerCase() }
-            if (tags) {
-                const tagList = Array.isArray(tags) ? tags : tags.split(',')
-                q.tags = { $in: tagList }
-            }
-
-            if (minPrice || maxPrice) {
-                q.price = {}
-                if (minPrice) q.price.$gte = Number(minPrice)
-                if (maxPrice) q.price.$lte = Number(maxPrice)
-            }
-            const sortBy = sort ? sort.split(',').join(' ') : '-createdAt'
-            let projection = {}
-            if (text && !sort) {
-                projection = { score: { $meta: 'textScore' } }
-                sortBy = { score: { $meta: 'textScore' } }
-            }
-            const [products, total] = await Promise.all([
-                Product.find(q)
-                    .sort(sortBy)
-                    .skip(skip)
-                    .limit(limit),
-                Product.countDocuments(q)
-            ]);
-            res.status(200).json({
-                success: true,
-                message: `count of products ${products.length}`,
-                data: products,
-                pagination: {
-                    page,
-                    limit,
-                    totalItems,
-                    totalPages: Math.ceil(totalItems / limit)
-                }
-            });
-        } catch (err) {
-            logger.error(err.message)
-            res.status(500).send({
-                message: err.message
-            })
-        }
-    },
     // @desc    Get a single product by ID
     // @route   GET /products/:id
     // @auth  Public
@@ -171,6 +124,68 @@ const productController = {
         }
     },
 
+    // @desc    Update product
+    // @route   PATCH /products
+    // @auth  Admin
+
+    updateProduct: async (req, res, next) => {
+        try {
+            const product = await Product.findById(req.params.id)
+            if (!product) {
+                return res.status(404).json({ message: "Product not found" })
+            }
+            const allowedFields = [
+                'name', 'shortDescription', 'description', 'price', 'discountPrice',
+                'stock', 'sku', 'category', 'subcategory', 'brand',
+                'featured', 'isActive'
+            ];
+            allowedFields.forEach(field => {
+                if (req.body[field] !== undefined) {
+                    updates[field] = req.body[field]
+                }
+            })
+            await product.validate()
+
+            const publicIDs = product.images.map(img => img.publicId)
+
+            // upload images first 
+            if (req.files?.length) {
+                const newImages = await uploadImages(req.files)
+                product.images.push(...newImages)
+            }
+            if (req.body.imagesToDelete) {
+                let idToDelete;
+                try {
+                    idToDelete = JSON.parse(req.body.imagesToDelete)
+
+                } catch (error) {
+                    next(error)
+                };
+                if (!Array.isArray(idToDelete)) {
+                    return res.status(400).json({ message: "imagesToDelete must be an array" })
+                }
+                const validIdToDelete = idToDelete.filter(id => publicIDs.includes(id))
+
+                if (validIdToDelete.length > 0) {
+                    await Promise.allSettled(
+                        validIdToDelete.map((publicId => cloudinary.uploader.destroy(publicId)))
+                    )
+                    product.images = product.images.filter(img => !validIdToDelete.includes(img.publicId))
+                }
+            }
+
+            if (product.images.length === 0) {
+                return res.status(400).json({ message: 'Product must have at least one image' })
+            }
+
+            await product.save()
+            res.status(200).json({ success: true, data: product })
+
+        } catch (error) {
+            next(error)
+        }
+    },
+
     // @desc    Delete product
     // @route   DELETE /products
     // @auth  Admin
@@ -184,7 +199,9 @@ const productController = {
                     product.images.map(image => cloudinary.uploader.destroy(image.publicId))
                 )
             }
-            await Product.deleteOne({ _id: req.params.id })
+            product.isActive = false;
+            await product.save()
+            // await Product.deleteOne({ _id: req.params.id })
 
             res.status(200).json({ success: true, data: {} })
         } catch (error) {
