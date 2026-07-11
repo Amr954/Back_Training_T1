@@ -4,18 +4,42 @@ const { log } = require('winston')
 const logger = loggerEvent('user')
 const cloudinary = require('../.config/cloudinary')
 const uploadToCloudinary = require('../utils/uploadToCloudinary')
-
+const AppError = require('../services/AppError.service')
+const constantMessages = require('../services/constants')
 // Uploads multiple files in parallel and shapes each result to match
 // the Product schema's images field: { url, publicId }
-const uploadImages = async (files, folder = 'products') => {
-    const uploadResults = await Promise.all(
-        files.map(file => uploadToCloudinary(file.buffer, folder))
-    )
+/*
+Achiveing Atomicty (مبدا الذرية كله مع بعض او لا):
+   If ANY file fails to upload, we roll back the ones
+that DID succeed (delete them from Cloudinary) and throw — so a caller
+never ends up with a partial set of images silently saved.
+it's similar as financial transaction.
+*/
 
-    return uploadResults.map(result => ({
-        url: result.secure_url,
-        publicId: result.public_id
-    }))
+const uploadImages = async (files, folder = 'products') => {
+    const uploaded = []
+    try {
+        await Promise.all(
+            files.map(async (file) => {
+                const uploadResult = await uploadToCloudinary(file.buffer, folder)
+                uploaded.push(uploadResult)
+                return uploadResult
+            })
+        )
+        return uploaded.map(result => ({
+            url: result.secure_url,
+            publicId: result.public_id
+        }))
+
+    } catch (error) {
+        if (uploaded.length > 0) {
+            await Promise.allSettled(
+                uploaded.map(image => cloudinary.uploader.destroy(image.publicId))
+            )
+        }
+        throw error
+    }
+
 }
 
 /*************** 
@@ -24,6 +48,7 @@ const uploadImages = async (files, folder = 'products') => {
 
 const productController = {
     // @ Get /products
+
     getProducts: async (req, res, next) => {
         try {
             const page = Math.max(parseInt(req.query.page) || 1, 1)
@@ -31,7 +56,6 @@ const productController = {
             const skip = (page - 1) * limit
             const { q, category, brand, minPrice, maxPrice, sort, tags, subcategory } = req.query
             const filter = { isActive: true }
-
             if (q) {
                 filter.$text = { $search: q }
             }
@@ -83,18 +107,16 @@ const productController = {
     // @route   GET /products/:id
     // @auth  Public
 
-    getProduct: async (req, res) => {
+    getProduct: async (req, res,next) => {
         try {
-            const product = await Product.findById(req.params.id).lean()
+            const product = await Product.findOne({ _id: req.params.id, isActive: true }).lean()
             if (!product) {
-                return res.status(404).json({ message: "Product not found" })
+                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND,404))
             }
             res.status(200).json({ success: true, data: product })
         } catch (err) {
             logger.error(err.message)
-            res.status(400).send({
-                message: err.message
-            })
+            next(err)
         }
     },
 
@@ -105,11 +127,19 @@ const productController = {
     createProduct: async (req, res, next) => {
         try {
             req.body.createdBy = req.user.id
+            const product = new Product(req.body)
+
+            const existingSku = await Product.findOne({ sku: req.body.sku })
+            if (existingSku) {
+                return next(new AppError(constantMessages.PRODUCT_SKU_CHECK,400))
+            }
+            if (req.body.discountPrice && Number(req.body.discountPrice) >= Number(req.body.price)) {
+                return res.status(400).json({ success: false, message: 'Discount price must be less than price' })
+            }
 
             if (!req.files || req.files.length === 0) {
                 return res.status(400).json({ success: false, message: 'At least one product image is required' })
             }
-
             req.body.images = await uploadImages(req.files)
 
             // tags can arrive as "red,summer" (form-data sends strings) or already as an array
@@ -117,7 +147,7 @@ const productController = {
                 req.body.tags = req.body.tags.split(',').map(t => t.trim())
             }
 
-            const product = await Product.create(req.body)
+            await product.save()
             res.status(201).json({ success: true, data: product })
         } catch (error) {
             next(error)
@@ -132,18 +162,36 @@ const productController = {
         try {
             const product = await Product.findById(req.params.id)
             if (!product) {
-                return res.status(404).json({ message: "Product not found" })
+                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND,404))
             }
+
             const allowedFields = [
                 'name', 'shortDescription', 'description', 'price', 'discountPrice',
                 'stock', 'sku', 'category', 'subcategory', 'brand',
                 'featured', 'isActive'
             ];
+            const updates = {}
             allowedFields.forEach(field => {
                 if (req.body[field] !== undefined) {
                     updates[field] = req.body[field]
                 }
             })
+            const existingSku = await Product.findOne({ sku: req.body.sku })
+            if (existingSku) {
+                return next(new AppError(constantMessages.PRODUCT_SKU_CHECK,400))
+            }
+            if (req.body.tags !== undefined) {
+                updates.tags = typeof req.body.tags === 'string'
+                    ? req.body.tags.split(',').map(t => t.trim())
+                    : req.body.tags
+            }
+            const hasNewImages = req.files?.length > 0
+            const hasImageDeletions = !!req.body.imagesToDelete
+            if (Object.keys(updates).length === 0 && !hasNewImages && !hasImageDeletions) {
+                return next(new AppError('No valid fields provided to update', 400))
+            }
+
+            Object.assign(product, updates)
             await product.validate()
 
             const publicIDs = product.images.map(img => img.publicId)
@@ -193,7 +241,7 @@ const productController = {
     deleteProduct: async (req, res, next) => {
         try {
             const product = await Product.findById(req.params.id)
-            if (!product) { return res.status(404).json({ message: "Product not found." }) }
+            if (!product) { return next(new AppError(constantMessages.PRODUCT_NOT_FOUND,404))}
             if (product.images?.length) {
                 await Promise.all(
                     product.images.map(image => cloudinary.uploader.destroy(image.publicId))
@@ -204,6 +252,91 @@ const productController = {
             // await Product.deleteOne({ _id: req.params.id })
 
             res.status(200).json({ success: true, data: {} })
+        } catch (error) {
+            next(error)
+        }
+    },
+
+    // @desc    ADD review to product
+    // @route   POST /review
+    // @auth  User
+
+    addReview: async (req, res, next) => {
+        try {
+            const id = req.params.id
+            const product = await Product.findById(id)
+            if (!product) {
+                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND,404))
+            }
+            if (!product.isActive) {
+                return next(new AppError(constantMessages.PRODUCT_INACTIVE,400))
+            }
+
+            const reviewedAlready = product.reviews.find(review => review.user.toString() === req.user.id)
+            if (reviewedAlready) { return next(new AppError(constantMessages.PRODUCT_ALREADY_REVIEWED,400))}
+            const { rating, comment } = req.body
+            const numRate = Number(rating)
+            if (!rating || !comment) {
+                { return res.status(400).json({ message: "These fields are required." }) }
+            }
+
+            if (isNaN(numRate)) {
+                return res.status(400).json({ message: 'Rating must be a number' });
+            }
+
+            if (numRate > 5 || numRate < 1) {
+                { return res.status(400).json({ message: "Rating must be between 1 and 5." }) }
+            }
+
+            const userReview = { user: req.user.id, rating: numRate, comment }
+            product.reviews.push(userReview)
+            product.calcAverageRating()
+            await product.save()
+            res.status(201).json({ success: true, data: product })
+        } catch (error) {
+            next(error)
+        }
+    },
+
+    // @desc    DELETE review
+    // @route   DELETE /:id/reviews/:rid
+    // @auth  User/Admin
+
+    deleteReview: async (req, res, next) => {
+        try {
+            const id = req.params.id
+            const product = await Product.findById(id)
+            if (!product) {
+                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND,404))
+            }
+            const existingReview = product.reviews.id(req.params.rid)
+            const owner = existingReview.user.toString() === req.user.id
+            const admin = req.user.role === "admin"
+            if (!existingReview) { return next(new AppError(constantMessages.REVIEW_NOT_FOUND,404)) }
+            if (!owner || !admin) {
+                return next(new AppError(constantMessages.NOT_AUTHORIZED_REVIEW,403))
+            }
+            product.reviews = product.reviews.filter(r => r._id.toString() !== req.params.rid)
+            product.calcAverageRating()
+            await product.save()
+            res.status(200).json({ success: true, data: {} })
+        } catch (error) {
+            next(error)
+        }
+    },
+
+    // @desc    GET reviews
+    // @route   GET /:id/reviews
+    // @auth  Public
+
+    getReviews: async (req, res, next) => {
+        try {
+            const id = req.params.id
+            const product = await Product.findById(id).select('reviews').lean()
+            if (!product) {
+                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND,404))
+            }
+            res.status(200).json({ success: true, data: product.reviews })
         } catch (error) {
             next(error)
         }

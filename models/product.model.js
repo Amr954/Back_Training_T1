@@ -42,6 +42,7 @@ const productSchema = new Schema({
 
     description: {
         type: String,
+        maxlength: 1000,
         required: true
     },
 

@@ -75,25 +75,46 @@ const createProductSchema = Joi.object({
 })
 
 const updateProductSchema = Joi.object({
-    name: Joi.string().max(200).optional(),
-    shortDescription: Joi.string().max(500).optional(),
+    name: Joi.string().max(200).optional().messages({
+        'string.max': 'Product name cannot exceed 200 characters'
+    }),
+    shortDescription: Joi.string().max(500).optional().messages({
+        'string.max': 'Short description cannot exceed 500 characters'
+    }),
     description: Joi.string().optional(),
-    price: Joi.number().min(0).optional(),
-    discountPrice: Joi.number().min(0).less(Joi.ref('price')).default(0),
-    stock: Joi.number().min(0).optional(),
+    price: Joi.number().min(0).optional().messages({
+        'number.min': 'Price cannot be negative'
+    }),
+    discountPrice: Joi.number().min(0).optional().messages({
+        'number.min': 'Discount price cannot be negative'
+    }),
+    stock: Joi.number().integer().min(0).optional().messages({
+        'number.integer': 'Stock must be a whole number',
+        'number.min': 'Stock cannot be negative'
+    }),
     sku: Joi.string().optional(),
     category: Joi.string().optional(),
     subcategory: Joi.string().optional(),
     brand: Joi.string().optional(),
-    tags: Joi.alternatives().try(Joi.array().items(Joi.string()),Joi.string()).optional(),
+    tags: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string()).optional(),
     featured: Joi.boolean().optional(),
     isActive: Joi.boolean().optional(),
     createdBy: Joi.forbidden(),
     images: Joi.any().optional(), // Handled by multer
-    imagesToDelete:Joi.string().optional() // JSON array as string
+    imagesToDelete: Joi.string().optional() // JSON array as string
 })
 
-module.exports = { 
+const addReviewSchema = Joi.object({
+    rating:Joi.number().integer().min(1).max(5).required().messages({
+        'message':'Rating must be an integer number and between 1 & 5'
+    }),
+    comment:Joi.string().max(1000).required().messages({
+        'message':'Comment is required.'
+    })
+})
+
+module.exports = {
     createProductSchema,
-    updateProductSchema 
+    updateProductSchema,
+    addReviewSchema
 }

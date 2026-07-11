@@ -10,6 +10,9 @@ const { generateAccessToken, generateRefreshToken, cookieOptions, generateResetT
 const generateOtp = require('../utils/generateOTP')
 const sendEmail = require('../utils/sendEmail')
 const { URL } = require("url")
+const AppError = require('../services/AppError.service')
+const constantMessages = require('../services/constants')
+
 
 function buildResetUrl(baseUrl, token, email) {
     const resetUrl = new URL("/reset-password", baseUrl)
@@ -22,25 +25,23 @@ const OTP_EXPIRY_MINUTES = 5
 const userController = {
 
     // POST /auth/register/send-otp
-    sendOtp: async (req, res) => {
+    sendOtp: async (req, res, next) => {
         try {
             const { email } = req.body
             logger.info(email)
 
             const existingUser = await User.findOne({ email })
             if (existingUser) {
-                return res.status(403).send({
-                    message: "Email is already registered !!"
-                })
+                return next(new AppError(constantMessages.USER_ALREADY_EXISTS, 400))
             }
 
             const otpCode = generateOtp()
             const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000)
 
             let otpDoc = await OTP.findOne({ email })
-            if(otpDoc && otpDoc.expiresAt.getTime() > Date.now()){
+            if (otpDoc && otpDoc.expiresAt.getTime() > Date.now()) {
                 return res.status(400).send({
-                    message:"OTP has been sent to your email already check it."
+                    message: "OTP has been sent to your email already check it."
                 })
             }
             if (otpDoc) {
@@ -64,19 +65,17 @@ const userController = {
             })
 
             res.status(200).send({
-                message: "OTP sent to your email successfully !!"
+                message: constantMessages.OTP_SENT
             })
         }
         catch (err) {
             logger.error(err.message)
-            res.status(400).send({
-                message: err.message
-            })
+            next(err)
         }
     },
 
     // POST /auth/verify-otp
-    verifyOtp: async (req, res) => {
+    verifyOtp: async (req, res, next) => {
         try {
             const { email, otp } = req.body
             logger.info(email)
@@ -98,7 +97,7 @@ const userController = {
             const isMatch = await otpDoc.compareOtp(otp)
             if (!isMatch) {
                 return res.status(400).send({
-                    message: "Invalid OTP"
+                    message: constantMessages.INVALID_OTP
                 })
             }
 
@@ -120,18 +119,20 @@ const userController = {
         }
     },
 
-    logIn: async (req, res) => {
+    logIn: async (req, res, next) => {
         try {
             const { email, password } = req.body
 
+            if (!email || !password) return next(new AppError('Please provide email and password', 400));
             const user = await User.findOne({ email })
             if (!user) {
-                return res.status(403).send({ message: "wrong credentials try again!" })
+                return next(new AppError(constantMessages.INVALID_CREDENTIALS, 401));
             }
-
+            if (!user.isVerified) return next(new AppError(constantMessages.EMAIL_NOT_VERIFIED, 403));
+            
             const isMatch = await bcryptjs.compare(password, user.password)
             if (!isMatch) {
-                return res.status(403).send({ message: "wrong credentials try again!" })
+                return next(new AppError(constantMessages.INVALID_CREDENTIALS, 401));
             }
 
             const accessToken = generateAccessToken(user)
@@ -151,11 +152,11 @@ const userController = {
 
         } catch (err) {
             logger.error(err.message)
-            res.status(500).send({ message: err.message })
+            next(err)
         }
     },
 
-    forgotPassword: async (req, res) => {
+    forgotPassword: async (req, res, next) => {
         try {
             const { email } = req.body
             const user = await User.findOne({ email })
@@ -186,15 +187,15 @@ const userController = {
         }
     },
 
-    resetPassword: async (req, res) => {
+    resetPassword: async (req, res, next) => {
         try {
             const { token, newPassword } = req.body
             console.log("BODY:", req.body)
 
             const hashedIncomingToken = crypto.createHash("sha256").update(token).digest("hex")
-            const user = await User.findOne({ 
-                resetPasswordToken:hashedIncomingToken,
-                resetPasswordExpires:{$gt:Date.now()} 
+            const user = await User.findOne({
+                resetPasswordToken: hashedIncomingToken,
+                resetPasswordExpires: { $gt: Date.now() }
             })
             if (!user || !user.resetPasswordToken || !user.resetPasswordExpires) {
                 return res.status(400).send({ message: "invalid or expired reset link" })
@@ -224,7 +225,7 @@ const userController = {
         }
     },
 
-    refresh: async (req, res) => {
+    refresh: async (req, res, next) => {
         try {
             console.log("cookies received:", req.cookies)
             const refreshToken = req.cookies?.refresh_token
@@ -240,7 +241,7 @@ const userController = {
 
             const user = await User.findById(decoded.id)
             if (!user || !user.tokens.includes(refreshToken)) {
-                return res.status(403).send({ message: "refresh token revoked or invalid" })
+                return res.status(403).send({ message: constantMessages.INVALID_TOKEN })
             }
 
             // rotate: remove old, issue new pair
@@ -259,11 +260,11 @@ const userController = {
             })
         } catch (err) {
             logger.error(err.message)
-            res.status(500).send({ message: err.message })
+            next(err)
         }
     },
 
-    getUser: async (req, res) => {
+    getUser: async (req, res, next) => {
         try {
             let user = await User.findById(req.user._id)
             res.send(user)
@@ -275,7 +276,7 @@ const userController = {
         }
     },
 
-    logOut: async (req, res) => {
+    logOut: async (req, res, next) => {
         try {
             const refreshToken = req.cookies?.refresh_token
             if (refreshToken) {
@@ -287,38 +288,36 @@ const userController = {
                 }
             }
             res.clearCookie("refresh_token")
-            res.status(200).send({ message: "logged out successfully" })
+            res.status(200).send({ message: constantMessages.LOGGED_OUT})
         } catch (err) {
             logger.error(err.message)
-            res.status(500).send({ message: err.message })
+            next(err)
         }
     },
 
-    changeUserRole: async (req, res) => {
-            try {
-                const { role } = req.body
-                if (req.user.role === req.params.role) {
-                    return res.status(400).json({ message: "You cannot change your own role" })
-                }
-                const user = await User.findByIdAndUpdate(req.params.id,
-                    { role },
-                    { new: true, runValidators: true }
-                ).select('-password -tokens -resetPasswordToken -resetPasswordExpires')
-                if (!user) {
-                    { return res.status(404).json({ message: "user not found." }) }
-                }
-                res.status(200).json({
-                    success: true,
-                    message: `Role updated to ${role} for user ${user.userName}`,
-                    data: user
-                })
-            } catch (err) {
-                logger.error(err.message)
-                res.status(400).send({
-                    message: err.message
-                })
+    changeUserRole: async (req, res, next) => {
+        try {
+            const { role } = req.body
+            if (req.user.role === req.params.role) {
+                 return next(new AppError(constantMessages.USER_CANNOT_CHANGE_OWN_ROLE, 400));
             }
-        },
-    
+            const user = await User.findByIdAndUpdate(req.params.id,
+                { role },
+                { new: true, runValidators: true }
+            ).select('-password -tokens -resetPasswordToken -resetPasswordExpires')
+            if (!user) {
+                return next(new AppError(constantMessages.USER_NOT_FOUND,404))
+            }
+            res.status(200).json({
+                success: true,
+                message: `Role updated to ${role} for user ${user.userName}`,
+                data: user
+            })
+        } catch (err) {
+            logger.error(err.message)
+            next(err)
+        }
+    },
+
 }
 module.exports = userController

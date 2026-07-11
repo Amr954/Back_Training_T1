@@ -109,3 +109,8 @@
 2026-07-08 19-48-21 | WARN | ["\"role\" is not allowed","\"password\" is not allowed"]
 2026-07-08 19-48-29 | WARN | ["\"role\" is not allowed"]
 2026-07-08 19-51-49 | WARN | ["\"oldPassword\" is required","\"oldpassword\" is not allowed"]
+2026-07-11 15-50-15 | WARN | ["\"rating\" is not allowed","\"comment\" is not allowed"]
+2026-07-11 15-52-42 | WARN | ["\"rating\" is not allowed","\"comment\" is not allowed"]
+2026-07-11 15-53-11 | WARN | ["\"rating\" is not allowed","\"comment\" is not allowed"]
+2026-07-11 15-57-04 | WARN | ["\"rating\" is not allowed","\"comment\" is not allowed"]
+2026-07-11 17-10-17 | WARN | ["Discount price must be less than the original price"]
