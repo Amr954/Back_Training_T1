@@ -28,6 +28,6 @@ router.put('/update/:id', adminAuthorization, imageUpload.array('images', 5), va
 /* ----------------------------------- */
 // @ DELETE
 router.delete('/:id', adminAuthorization, productController.deleteProduct)
-router.delete('/:id/reviews/:rid', adminAuthorization, productController.deleteReview)
+router.delete('/:id/reviews/:rid', authentication, productController.deleteReview)
 
 module.exports = router

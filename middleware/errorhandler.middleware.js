@@ -1,66 +1,61 @@
-// middlewares/errorHandler.js
+const AppError = require('../services/AppError.service')
 
 const errorHandler = (err, req, res, next) => {
-  console.error(err);
+    console.error(err)
+    let errorMes = err
 
-  let statusCode = err.statusCode || 500;
-  let message = err.message || "Internal Server Error";
+    // Invalid MongoDB ObjectId
+    if (err.name === 'CastError') {
+        errorMes = new AppError(`Resource not found with id: ${err.value}`, 404)
+    }
 
-  // Invalid MongoDB ObjectId
-  if (err.name === "CastError") {
-    statusCode = 404;
-    message = `Resource not found with id: ${err.value}`;
-  }
+    // Duplicate key error
+    if (err.code === 11000) {
+        const field = Object.keys(err.keyValue)[0]
+        const value = err.keyValue[field]
+        errorMes = new AppError(`${field} '${value}' already exists`, 400)
+    }
 
-  // Duplicate key error
-  if (err.code === 11000) {
-    statusCode = 400;
+    // Mongoose validation error
+    if (err.name === 'ValidationError') {
+        const message = Object.values(err.errors)
+            .map((e) => e.message)
+            .join(', ')
+        errorMes = new AppError(message, 400)
+    }
 
-    const field = Object.keys(err.keyValue)[0];
-    const value = err.keyValue[field];
+    // JWT invalid
+    if (err.name === 'JsonWebTokenError') {
+        errorMes = new AppError('Invalid token. Please login again.', 401)
+    }
 
-    message = `${field} '${value}' already exists`;
-  }
+    // JWT expired
+    if (err.name === 'TokenExpiredError') {
+        errorMes = new AppError('Token expired. Please login again.', 401)
+    }
 
-  // Mongoose validation error
-  if (err.name === "ValidationError") {
-    statusCode = 400;
-    message = Object.values(err.errors)
-      .map((error) => error.message)
-      .join(", ");
-  }
+    // Multer errors
+    if (err.name === 'MulterError') {
+        errorMes = new AppError(err.message, 400)
+    }
 
-  // JWT invalid
-  if (err.name === "JsonWebTokenError") {
-    statusCode = 401;
-    message = "Invalid token. Please login again.";
-  }
+    // JSON parse error
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        errorMes = new AppError('Invalid JSON payload', 400)
+    }
 
-  // JWT expired
-  if (err.name === "TokenExpiredError") {
-    statusCode = 401;
-    message = "Token expired. Please login again.";
-  }
+    const statusCode = errorMes.statusCode || 500
+    const isKnownError = errorMes.isOperational === true
 
-  // Multer errors
-  if (err.name === "MulterError") {
-    statusCode = 400;
-    message = err.message;
-  }
+    const message = (process.env.NODE_ENV === 'production' && !isKnownError)
+        ? 'Something went wrong. Please try again later.'
+        : (errorMes.message || 'Internal Server Error')
 
-  // JSON parse error
-  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
-    statusCode = 400;
-    message = "Invalid JSON payload";
-  }
+    res.status(statusCode).json({
+        success: false,
+        message,
+        ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    })
+}
 
-  res.status(statusCode).json({
-    success: false,
-    message,
-    ...(process.env.NODE_ENV !== "production" && {
-      stack: err.stack,
-    }),
-  });
-};
-
-module.exports = errorHandler;
+module.exports = errorHandler

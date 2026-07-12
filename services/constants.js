@@ -27,7 +27,7 @@ const constantMessages = {
 
     PRODUCT_NOT_FOUND: 'Product not found',
     PRODUCT_INACTIVE: 'You can not add a review to an inactive product.',
-    PRODUCT_ALREADY_REVIEWED: 'Product already reviewed',
+    PRODUCT_ALREADY_REVIEWED: 'Product already reviewed you can only add one review for a product.',
     PRODUCT_SKU_CHECK:'Product with same sku already exist',
 
     // Reviews

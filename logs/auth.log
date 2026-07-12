@@ -30,3 +30,4 @@
 2026-07-11 15-53-11 | WARN | ["\"rating\" is not allowed","\"comment\" is not allowed"]
 2026-07-11 15-57-04 | WARN | ["\"rating\" is not allowed","\"comment\" is not allowed"]
 2026-07-11 17-10-17 | WARN | ["Discount price must be less than the original price"]
+2026-07-12 15-23-44 | WARN | ["\"password\" is required","\"paswword\" is not allowed"]

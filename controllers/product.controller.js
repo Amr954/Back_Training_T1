@@ -107,11 +107,11 @@ const productController = {
     // @route   GET /products/:id
     // @auth  Public
 
-    getProduct: async (req, res,next) => {
+    getProduct: async (req, res, next) => {
         try {
             const product = await Product.findOne({ _id: req.params.id, isActive: true }).lean()
             if (!product) {
-                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND,404))
+                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND, 404))
             }
             res.status(200).json({ success: true, data: product })
         } catch (err) {
@@ -131,7 +131,7 @@ const productController = {
 
             const existingSku = await Product.findOne({ sku: req.body.sku })
             if (existingSku) {
-                return next(new AppError(constantMessages.PRODUCT_SKU_CHECK,400))
+                return next(new AppError(constantMessages.PRODUCT_SKU_CHECK, 400))
             }
             if (req.body.discountPrice && Number(req.body.discountPrice) >= Number(req.body.price)) {
                 return res.status(400).json({ success: false, message: 'Discount price must be less than price' })
@@ -162,7 +162,7 @@ const productController = {
         try {
             const product = await Product.findById(req.params.id)
             if (!product) {
-                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND,404))
+                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND, 404))
             }
 
             const allowedFields = [
@@ -176,9 +176,14 @@ const productController = {
                     updates[field] = req.body[field]
                 }
             })
-            const existingSku = await Product.findOne({ sku: req.body.sku })
-            if (existingSku) {
-                return next(new AppError(constantMessages.PRODUCT_SKU_CHECK,400))
+            if (req.body.sku && req.body.sku !== product.sku) {
+                const existingSku = await Product.findOne({
+                    sku: req.body.sku,
+                    _id: { $ne: product._id } //هعمل تشيك علي كل المنتجات التانية ما عدا المنتج اللي بغير فيه
+                })
+                if (existingSku) {
+                    return next(new AppError(constantMessages.PRODUCT_SKU_CHECK, 400))
+                }
             }
             if (req.body.tags !== undefined) {
                 updates.tags = typeof req.body.tags === 'string'
@@ -207,7 +212,7 @@ const productController = {
                     idToDelete = JSON.parse(req.body.imagesToDelete)
 
                 } catch (error) {
-                    next(error)
+                    return next(error)
                 };
                 if (!Array.isArray(idToDelete)) {
                     return res.status(400).json({ message: "imagesToDelete must be an array" })
@@ -241,7 +246,7 @@ const productController = {
     deleteProduct: async (req, res, next) => {
         try {
             const product = await Product.findById(req.params.id)
-            if (!product) { return next(new AppError(constantMessages.PRODUCT_NOT_FOUND,404))}
+            if (!product) { return next(new AppError(constantMessages.PRODUCT_NOT_FOUND, 404)) }
             if (product.images?.length) {
                 await Promise.all(
                     product.images.map(image => cloudinary.uploader.destroy(image.publicId))
@@ -266,14 +271,14 @@ const productController = {
             const id = req.params.id
             const product = await Product.findById(id)
             if (!product) {
-                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND,404))
+                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND, 404))
             }
             if (!product.isActive) {
-                return next(new AppError(constantMessages.PRODUCT_INACTIVE,400))
+                return next(new AppError(constantMessages.PRODUCT_INACTIVE, 400))
             }
 
             const reviewedAlready = product.reviews.find(review => review.user.toString() === req.user.id)
-            if (reviewedAlready) { return next(new AppError(constantMessages.PRODUCT_ALREADY_REVIEWED,400))}
+            if (reviewedAlready) { return next(new AppError(constantMessages.PRODUCT_ALREADY_REVIEWED, 400)) }
             const { rating, comment } = req.body
             const numRate = Number(rating)
             if (!rating || !comment) {
@@ -307,14 +312,14 @@ const productController = {
             const id = req.params.id
             const product = await Product.findById(id)
             if (!product) {
-                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND,404))
+                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND, 404))
             }
             const existingReview = product.reviews.id(req.params.rid)
+            if (!existingReview) { return next(new AppError(constantMessages.REVIEW_NOT_FOUND, 404)) }
             const owner = existingReview.user.toString() === req.user.id
             const admin = req.user.role === "admin"
-            if (!existingReview) { return next(new AppError(constantMessages.REVIEW_NOT_FOUND,404)) }
-            if (!owner || !admin) {
-                return next(new AppError(constantMessages.NOT_AUTHORIZED_REVIEW,403))
+            if (!owner && !admin) {
+                return next(new AppError(constantMessages.NOT_AUTHORIZED_REVIEW, 403))
             }
             product.reviews = product.reviews.filter(r => r._id.toString() !== req.params.rid)
             product.calcAverageRating()
@@ -334,7 +339,7 @@ const productController = {
             const id = req.params.id
             const product = await Product.findById(id).select('reviews').lean()
             if (!product) {
-                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND,404))
+                return next(new AppError(constantMessages.PRODUCT_NOT_FOUND, 404))
             }
             res.status(200).json({ success: true, data: product.reviews })
         } catch (error) {
