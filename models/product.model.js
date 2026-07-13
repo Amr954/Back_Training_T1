@@ -120,7 +120,7 @@ productSchema.index({
     description: "text",
     brand: "text",
 });
-productSchema.index({ category: 1, brand: 1, price: 1, averageRating: -1, createdAt: -1 })
+// productSchema.index({ category: 1, brand: 1, price: 1, averageRating: -1, createdAt: -1 })
 
 // @ Pre save hook
 

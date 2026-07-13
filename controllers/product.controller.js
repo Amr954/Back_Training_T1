@@ -64,8 +64,8 @@ const productController = {
             if (brand) { filter.brand = brand }
 
             if (tags) {
-                const tagList = Array.isArray(tags) ? tags : tags.split(',')
-                filter.tags = { $in: tagList }
+                // const tagList = Array.isArray(tags) ? tags : tags.split(',')
+                filter.tags = tags
             }
             if (minPrice || maxPrice) {
                 filter.price = {}
@@ -73,7 +73,24 @@ const productController = {
                 if (maxPrice) filter.price.$lte = Number(maxPrice)
             }
 
-            const sortBy = sort ? sort.split(',').join(' ') : '-createdAt'
+            let sortBy = { createdAt: -1 }
+            switch (req.query.sort) {
+                case "price":
+                    sortBy = { price: 1 };
+                    break;
+                case "-price":
+                    sortBy = { price: -1 };
+                    break;
+                case "rating":
+                    sortBy = { averageRating: -1 };
+                    break;
+                case "newest":
+                    sortBy = { createdAt: -1 };
+                    break;
+                case "oldest":
+                    sortBy = { createdAt: 1 };
+                    break;
+            }
             let projection = {}
             if (q && !sort) {
                 projection = { score: { $meta: 'textScore' } }
@@ -127,7 +144,6 @@ const productController = {
     createProduct: async (req, res, next) => {
         try {
             req.body.createdBy = req.user.id
-            const product = new Product(req.body)
 
             const existingSku = await Product.findOne({ sku: req.body.sku })
             if (existingSku) {
@@ -147,6 +163,7 @@ const productController = {
                 req.body.tags = req.body.tags.split(',').map(t => t.trim())
             }
 
+            const product = new Product(req.body)
             await product.save()
             res.status(201).json({ success: true, data: product })
         } catch (error) {

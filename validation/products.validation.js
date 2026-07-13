@@ -27,8 +27,8 @@ const createProductSchema = Joi.object({
         .min(0)
         .required()
         .messages({
-            'number.base': 'Price must be a number',
-            'number.min': 'Price cannot be negative'
+            'number_base': 'Price must be a number',
+            'number_min': 'Price cannot be negative'
         }),
 
     discountPrice: Joi.number()
@@ -36,15 +36,15 @@ const createProductSchema = Joi.object({
         .less(Joi.ref('price'))
         .default(0)
         .messages({
-            'number.less': 'Discount price must be less than the original price'
+            'number_less': 'Discount price must be less than the original price'
         }),
 
     stock: Joi.number()
         .min(0)
         .required()
         .messages({
-            'number.base': 'Stock must be a number',
-            'number.min': 'Stock cannot be negative'
+            'number_base': 'Stock must be a number',
+            'number_min': 'Must be grater than or equal to 0.'
         }),
 
     sku: Joi.string().optional(),

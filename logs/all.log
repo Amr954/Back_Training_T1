@@ -115,3 +115,8 @@
 2026-07-11 15-57-04 | WARN | ["\"rating\" is not allowed","\"comment\" is not allowed"]
 2026-07-11 17-10-17 | WARN | ["Discount price must be less than the original price"]
 2026-07-12 15-23-44 | WARN | ["\"password\" is required","\"paswword\" is not allowed"]
+2026-07-12 18-55-21 | WARN | ["Discount price must be less than the original price"]
+2026-07-12 20-52-36 | WARN | ["\"stock\" must be greater than or equal to 0"]
+2026-07-12 21-17-50 | WARN | ["\"stock\" must be greater than or equal to 0"]
+2026-07-12 21-20-48 | WARN | ["\"discountPrice\" must be less than ref:price"]
+2026-07-12 21-21-36 | WARN | ["\"discountPrice\" must be less than ref:price"]
