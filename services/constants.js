@@ -33,6 +33,9 @@ const constantMessages = {
     // Reviews
     REVIEW_NOT_FOUND: 'Review not found',
     NOT_AUTHORIZED_REVIEW: 'Not authorized to delete this review',
+
+    // CART
+    CART_CREATED: 'Cart created successfully!'
 }
 
 

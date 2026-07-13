@@ -1,7 +1,7 @@
 const Product = require('../models/product.model')
 const loggerEvent = require('../services/logger.service')
 const { log } = require('winston')
-const logger = loggerEvent('user')
+const logger = loggerEvent('product')
 const cloudinary = require('../.config/cloudinary')
 const uploadToCloudinary = require('../utils/uploadToCloudinary')
 const AppError = require('../services/AppError.service')
