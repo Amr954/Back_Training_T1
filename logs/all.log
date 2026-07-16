@@ -120,3 +120,7 @@
 2026-07-12 21-17-50 | WARN | ["\"stock\" must be greater than or equal to 0"]
 2026-07-12 21-20-48 | WARN | ["\"discountPrice\" must be less than ref:price"]
 2026-07-12 21-21-36 | WARN | ["\"discountPrice\" must be less than ref:price"]
+2026-07-14 16-34-50 | WARN | ["Product ID is required","Quantity must be at least 1","\"publicId\" is not allowed"]
+2026-07-15 01-23-46 | WARN | ["\"discountPrice\" must be less than ref:price"]
+2026-07-16 03-15-16 | WARN | ["\"quantity\" must be a number"]
+2026-07-16 03-15-24 | WARN | ["Quantity must be at least 1"]

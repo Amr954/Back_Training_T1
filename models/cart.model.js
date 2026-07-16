@@ -54,7 +54,7 @@ cartSchema.virtual('discountAmount').get(function () {
         return 0
     }
     if (this.coupon.discountType === 'percentage') {
-        return (this.suptotal * this.coupon.discountValue) / 100
+        return (this.subtotal * this.coupon.discountValue) / 100
     }
     if (this.coupon.discountType === 'fixed') {
         return this.coupon.discountValue
@@ -64,7 +64,7 @@ cartSchema.virtual('discountAmount').get(function () {
 
 //@ total (virtual)
 cartSchema.virtual('total').get(function(){
-    return this.suptotal - this.discountAmount
+    return this.subtotal - this.discountAmount
 })
 
 //@ itemCount (virtual)

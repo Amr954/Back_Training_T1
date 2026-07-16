@@ -206,7 +206,7 @@ const userController = {
             }
             await User.findByIdAndDelete(req.params.id);
             res.json({
-                message: "Account deleted successfully!",
+                message: "User deleted successfully!",
                 data: {}
             })
         } catch (err) {

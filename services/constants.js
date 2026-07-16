@@ -26,16 +26,22 @@ const constantMessages = {
     // PRODUCT
 
     PRODUCT_NOT_FOUND: 'Product not found',
-    PRODUCT_INACTIVE: 'You can not add a review to an inactive product.',
-    PRODUCT_ALREADY_REVIEWED: 'Product already reviewed you can only add one review for a product.',
+    PRODUCT_INACTIVE: 'Inactive Product.',
+    PRODUCT_ALREADY_REVIEWED: 'Product already reviewed once before.',
     PRODUCT_SKU_CHECK:'Product with same sku already exist',
-
+    NOT_ENOUGH_STOCK:'Items in stock not enough.',
     // Reviews
     REVIEW_NOT_FOUND: 'Review not found',
     NOT_AUTHORIZED_REVIEW: 'Not authorized to delete this review',
-
+    
     // CART
-    CART_CREATED: 'Cart created successfully!'
+    CART_CREATED: 'Cart created successfully!',
+    CART_NOT_FOUND: 'Cart not found',
+    PRODUCT_ALREADY_EXIST: 'Product already exist in cart.',
+
+    // WISHLIST
+    WISHLIST_NOT_FOUND: 'WishList not found',
+    PRODUCT_IN_WISHLIST: 'Product already exist in wishlist.',
 }
 
 

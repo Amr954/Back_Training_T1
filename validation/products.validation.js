@@ -106,7 +106,7 @@ const updateProductSchema = Joi.object({
 
 const addReviewSchema = Joi.object({
     rating:Joi.number().integer().min(1).max(5).required().messages({
-        'message':'Rating must be an integer number and between 1 & 5'
+        'message':'Rating must be an integer number between 1 & 5'
     }),
     comment:Joi.string().max(1000).required().messages({
         'message':'Comment is required.'
