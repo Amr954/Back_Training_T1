@@ -63,6 +63,11 @@ const cartController = {
             const cart = await getCartOrCreateIt(req)
 
             const existingItemIndex = cart.items.findIndex(item => item.product.toString() === productId)
+            const alreadyInCart = existingItemIndex > -1 ? cart.items[existingItemIndex].quantity:0
+            const totalRequested = alreadyInCart + q
+            if(product.stock < totalRequested){
+                return next(new AppError(constantMessages.NOT_ENOUGH_STOCK, 400))
+            }
             if (existingItemIndex > -1) {
                 cart.items[existingItemIndex].quantity += q
             } else {
@@ -160,7 +165,7 @@ const cartController = {
 
             res.status(200).json({
                 success: true,
-                message: `Coupon applied you have saved ${coupon.discountValue}%`,
+                message: `Coupon applied successfully. You saved ${coupon.discountValue}%.`,
                 data: cart
             })
         } catch (error) {
