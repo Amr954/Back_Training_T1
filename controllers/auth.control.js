@@ -145,7 +145,7 @@ const userController = {
             await user.save()
 
             res.status(200).json({
-                message: "Logged in successfully",
+                message: "Login successful",
                 accessToken,
                 user
             })
@@ -310,7 +310,7 @@ const userController = {
             }
             res.status(200).json({
                 success: true,
-                message: `Role updated to ${role} for user ${user.userName}`,
+                message: `User role updated to admin`,
                 data: user
             })
         } catch (err) {

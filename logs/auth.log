@@ -40,3 +40,4 @@
 2026-07-15 01-23-46 | WARN | ["\"discountPrice\" must be less than ref:price"]
 2026-07-16 03-15-16 | WARN | ["\"quantity\" must be a number"]
 2026-07-16 03-15-24 | WARN | ["Quantity must be at least 1"]
+2026-07-16 14-29-35 | WARN | ["\"quantity\" must be a number"]

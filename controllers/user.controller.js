@@ -157,6 +157,7 @@ const userController = {
             if (!user) { return next(new AppError(constantMessages.USER_NOT_FOUND, 404)) }
             res.status(200).json({
                 success: true,
+                message:'User updated successfully',
                 data: user
             })
         } catch (err) {

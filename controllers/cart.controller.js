@@ -158,7 +158,11 @@ const cartController = {
 
             await cart.save()
 
-            res.status(200).json({ success: true, data: cart })
+            res.status(200).json({
+                success: true,
+                message: `Coupon applied you have saved ${coupon.discountValue}%`,
+                data: cart
+            })
         } catch (error) {
             next(error)
         }

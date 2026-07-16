@@ -165,7 +165,7 @@ const productController = {
 
             const product = new Product(req.body)
             await product.save()
-            res.status(201).json({ success: true, data: product })
+            res.status(201).json({ success: true, message: "Product created successfully", data: product })
         } catch (error) {
             next(error)
         }
@@ -249,7 +249,7 @@ const productController = {
             }
 
             await product.save()
-            res.status(200).json({ success: true, data: product })
+            res.status(200).json({ success: true, message: "Product updated successfully", data: product })
 
         } catch (error) {
             next(error)
