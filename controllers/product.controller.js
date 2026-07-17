@@ -269,9 +269,8 @@ const productController = {
                     product.images.map(image => cloudinary.uploader.destroy(image.publicId))
                 )
             }
-            // product.isActive = false;
-            await product.deleteOne()
-            // await product.save()
+            product.isActive = false;
+            await product.save()
 
             res.status(200).json({ success: true, data: {} })
         } catch (error) {

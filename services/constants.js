@@ -36,6 +36,7 @@ const constantMessages = {
     
     // CART
     CART_CREATED: 'Cart created successfully!',
+    EMPTY_CART: 'Empty Cart!',
     CART_NOT_FOUND: 'Cart not found',
     PRODUCT_ALREADY_EXIST: 'Product already exist in cart.',
 
