@@ -2,7 +2,6 @@ const WishList = require('../models/wishlist.model')
 const Product = require('../models/product.model')
 const AppError = require('../services/AppError.service');
 const constantMessages = require('../services/constants');
-const wishList = require('../models/wishlist.model');
 
 const getWishListOrCreateIt = async (req) => {
     let userWishList = await WishList.findOne({ user: req.user.id })

@@ -43,6 +43,10 @@ const constantMessages = {
     // WISHLIST
     WISHLIST_NOT_FOUND: 'WishList not found',
     PRODUCT_IN_WISHLIST: 'Product already exist in wishlist.',
+
+    // ORDERS
+    ORDER_NOT_FOUND: 'Order not found',
+    ORDER_CANNOT_CANCELLED: 'You can only cancel pending or confirmed orders.',
 }
 
 

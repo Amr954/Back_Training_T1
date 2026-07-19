@@ -125,3 +125,5 @@
 2026-07-16 03-15-16 | WARN | ["\"quantity\" must be a number"]
 2026-07-16 03-15-24 | WARN | ["Quantity must be at least 1"]
 2026-07-16 14-29-35 | WARN | ["\"quantity\" must be a number"]
+2026-07-18 21-50-39 | WARN | ["Payment method must be one of: cash, stripe, paypal, paymob"]
+2026-07-18 21-51-15 | WARN | ["Payment method must be one of: cash or stripe"]

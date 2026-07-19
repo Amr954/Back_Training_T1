@@ -76,8 +76,11 @@ const orderSchema = new Schema({
     deliveredAt: { type: Date },
     cancelledAt: { type: Date },
     customerNote: { type: String, maxlength: 1000 },
-    adminNote: { type: String, maxlength: 1000 }
-})
+    adminNote: { type: String, maxlength: 1000 },
+    // createdAt: { type: Date, default: Date.now() }
+},{timestamps:true})
+
+orderSchema.index({ createdAt: -1 })
 
 const Order = mongoose.model('order', orderSchema)
 

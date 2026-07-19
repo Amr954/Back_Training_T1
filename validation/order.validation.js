@@ -27,8 +27,8 @@ const placeOrderSchema = Joi.object({
     }).required().messages({
         'any.required': 'Shipping address is required'
     }),
-    paymentMethod: Joi.string().valid('cash', 'stripe', 'paypal', 'paymob').optional().messages({
-        'any.only': 'Payment method must be one of: cash, stripe, paypal, paymob'
+    paymentMethod: Joi.string().valid('cash', 'stripe').optional().messages({
+        'any.only': 'Payment method must be one of: cash or stripe'
     }),
     customerNote: Joi.string().max(1000).optional().messages({
         'string.max': 'Note cannot exceed 1000 characters'

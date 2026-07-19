@@ -8,6 +8,13 @@ const { placeOrderSchema } = require('../validation/order.validation')
 //@ POST
 router.post('/',authentication,validate(placeOrderSchema),orderController.placeOrder)
 
+//@ GET
+router.get('/my',authentication,orderController.getMyOrders)
+router.get('/my/:id',authentication,orderController.getOrder)
+
+//@ PATCH
+router.patch('/my/:id/cancel',authentication,orderController.cancelAnOrder)
+
 module.exports = router
 
 
