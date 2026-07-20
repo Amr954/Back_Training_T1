@@ -35,6 +35,16 @@ const placeOrderSchema = Joi.object({
     })
 });
 
+const updateOrderStatusSchema = Joi.object({
+   status: Joi.string()
+        .valid('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned')
+        .required().message({
+            'valid.Status':'Invalid order status provided',
+             'status_required':'Status required'   
+        }) 
+        
+});
+
 module.exports = {
     placeOrderSchema
 }
