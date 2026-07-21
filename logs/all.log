@@ -127,3 +127,5 @@
 2026-07-16 14-29-35 | WARN | ["\"quantity\" must be a number"]
 2026-07-18 21-50-39 | WARN | ["Payment method must be one of: cash, stripe, paypal, paymob"]
 2026-07-18 21-51-15 | WARN | ["Payment method must be one of: cash or stripe"]
+2026-07-21 19-36-53 | WARN | ["Shipping address is required","\"productId\" is not allowed","\"quantity\" is not allowed"]
+2026-07-21 20-16-43 | WARN | ["Shipping address is required","\"productId\" is not allowed","\"quantity\" is not allowed"]

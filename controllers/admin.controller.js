@@ -49,13 +49,13 @@ const adminController = {
             ] = await Promise.all([
                 //1- Total revenues // هنشيل الطلبات الملغية مش هنحسبها 
                 Order.aggregate([
-                    { $match: { status: { $ne: 'cancelled' } } },
+                    { $match: { paymentStatus: 'paid' } },
                     { $group: { _id: null, total: { $sum: '$totalPrice' } } }
                 ]),
 
                 //2- current month revenue
                 Order.aggregate([
-                    { $match: { createdAt: { $gte: currentMonthStart }, status: { $ne: 'cancelled' } } },
+                    { $match: { createdAt: { $gte: currentMonthStart }, paymentStatus: 'paid' } },
                     { $group: { _id: null, total: { $sum: '$totalPrice' } } }
                 ]),
 
@@ -65,7 +65,7 @@ const adminController = {
                     {
                         $match: {
                             createdAt: { $gte: lastMonthStart, $lte: lastMonthEnd },
-                            status: { $ne: 'cancelled' }
+                            paymentStatus: 'paid'
                         }
                     },
                     { $group: { _id: null, total: { $sum: '$totalPrice' } } }
@@ -90,7 +90,7 @@ const adminController = {
 
                 //8-Top products by sale
                 Order.aggregate([
-                    { $match: { status: { $ne: 'cancelled' } } },
+                    { $match: { status: 'delivered' } },
                     { $unwind: '$items' },
                     {
                         $group: {
@@ -110,7 +110,7 @@ const adminController = {
                     {
                         $match: {
                             createdAt: { $gte: sevenDaysAgo },
-                            status: { $ne: 'cancelled' }
+                            paymentStatus: 'paid'
                         }
 
                     },
@@ -290,17 +290,32 @@ const adminController = {
             const validTransitions = {
                 pending: ['confirmed', 'cancelled'],
                 confirmed: ['processing', 'cancelled'],
-                processing: ['delivered', 'cancelled'],
-                delivered: ['returned'],
+                processing: ['shipped'],
+                shipped:['delivered'],
+                delivered: [],
                 cancelled: [],
                 returned: []
+            }
+
+            if(order.status === 'cancelled'){
+                throw new AppError('Order already cancelled',400)
+            }
+            if(order.status === 'delivered'){
+                throw new AppError('Order already delivered',400)
             }
             const allowedTransition = validTransitions[order.status]
             if (!allowedTransition || !allowedTransition.includes(status)) {
                 return next(new AppError('Cannot complete this status transition because it is not allowed', 400))
             }
-            order.status = status
-            if (status === 'delivered') order.deliveredAt = Date.now()
+            if (status === 'delivered') {
+                order.deliveredAt = Date.now()
+                if (order.paymentMethod === 'cash') {
+                    
+                    order.paymentStatus = 'paid';
+                    order.paidAt = new Date()
+                }
+            }
+            
             if (status === 'cancelled') {
                 order.cancelledAt = Date.now()
                 // if the order is cancelled restore the stock 
@@ -310,10 +325,11 @@ const adminController = {
                         { $inc: { stock: item.quantity } },
                     )
                 }
-                if (paymentStatus === 'paid') {
-                    order.paymentStatus = 'refunded'
+                if (order.paymentStatus === 'paid') {
+                    order.paymentStatus = 'pending'
                 }
             }
+            order.status = status
             await order.save()
             try {
                 const emailMessage = `
@@ -384,19 +400,23 @@ const adminController = {
                 { $group: { _id: '$products', count: { $sum: 1 } } },
                 { $sort: { count: 1 } },
                 { $limit: 5 },
-                {$lookup:{
-                    from:'products',
-                    localField:'_id',
-                    foreignField:'_id',
-                    as:'products_Details'
-                }},
+                {
+                    $lookup: {
+                        from: 'products',
+                        localField: '_id',
+                        foreignField: '_id',
+                        as: 'products_Details'
+                    }
+                },
                 { $unwind: '$products_Details' },
-                {$project:{
-                    _id:1,
-                    name:'$products_Details.name',
-                    count:1,
-                    price:'$products_Details.price'
-                }}
+                {
+                    $project: {
+                        _id: 1,
+                        name: '$products_Details.name',
+                        count: 1,
+                        price: '$products_Details.price'
+                    }
+                }
             ])
             res.status(200).json({ success: true, data: stats })
         } catch (error) {

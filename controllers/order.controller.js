@@ -9,7 +9,7 @@ const sendEmail = require('../utils/sendEmail')
 /* Handle Order using mongoose Transactions */
 
 const orderStatus = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned']
-const validPaymentMethods = ['cash' , 'stripe']
+const validPaymentMethods = ['cash', 'stripe']
 
 const orderController = {
 
@@ -20,7 +20,7 @@ const orderController = {
         const session = await mongoose.startSession()
         session.startTransaction()
         try {
-            const { shippingAddress, paymentMethod, customerNote} = req.body
+            const { shippingAddress, paymentMethod, customerNote } = req.body
 
             const cart = await Cart.findOne({ user: req.user.id }).session(session)
             if (!cart || cart.items.length === 0) {
@@ -136,7 +136,7 @@ const orderController = {
                     toDate.setHours(23, 59, 59)
                     filter.createdAt.$lt = toDate
                 }
-                if(from && to && filter.createdAt.$gte > filter.createdAt.$lt){
+                if (from && to && filter.createdAt.$gte > filter.createdAt.$lt) {
                     return next(new AppError('"from" date must be before "to" date', 400))
                 }
             }
@@ -193,6 +193,7 @@ const orderController = {
                 return next(new AppError(constantMessages.ORDER_CANNOT_CANCELLED, 400))
             }
             order.status = 'cancelled'
+            order.paymentStatus = 'pending'
             order.cancelledAt = Date.now()
             await order.save({ session })
 
@@ -214,7 +215,7 @@ const orderController = {
         }
     },
 
-    
+
 }
 
 
