@@ -1,6 +1,8 @@
 const Order = require('../models/order.model')
 const Cart = require('../models/cart.model')
 const Product = require('../models/product.model')
+const orderService = require('../services/createOrder.service')
+const stripe = require('../.config/stripe.config')
 const mongoose = require('mongoose');
 const AppError = require('../services/AppError.service');
 const constantMessages = require('../services/constants')
@@ -13,96 +15,23 @@ const validPaymentMethods = ['cash', 'stripe']
 
 const orderController = {
 
-    //@ POST Create order
-    //@ post/orders
-    //@ Auth User
     placeOrder: async (req, res, next) => {
-        const session = await mongoose.startSession()
-        session.startTransaction()
         try {
-            const { shippingAddress, paymentMethod, customerNote } = req.body
 
-            const cart = await Cart.findOne({ user: req.user.id }).session(session)
-            if (!cart || cart.items.length === 0) {
-                throw new AppError(constantMessages.EMPTY_CART, 400)
-            }
-            const orderItems = []
-            let subtotal = 0
-            for (const item of cart.items) {
-                const product = await Product.findOneAndUpdate(
-                    { _id: item.product, isActive: true, stock: { $gte: item.quantity } },
-                    { $inc: { stock: -item.quantity } },
-                    { session, new: true }
-                )
-                if (!product) throw new AppError(constantMessages.PRODUCT_NOT_FOUND, 404)
-                // if (!product.isActive) throw new AppError(`${item.name} is unavailable now or out of stock`, 400)
-                const price = product.discountPrice > 0 ? product.discountPrice : product.price
+            const order = await orderService.createOrder(req.user._id, req.body);
 
-                orderItems.push({
-                    product: product._id,
-                    name: product.name,
-                    image: product.images[0]?.url,
-                    price,
-                    quantity: item.quantity
-                })
-                subtotal += price * item.quantity
-            }
-            let discount = cart.discountAmount || 0
-            // let discount = 0
-            // if(cart.coupon && cart.coupon.code){
-            //     if(cart.coupon.discountType === 'percentage'){
-            //         discount = Math.min((subtotal * cart.coupon.discountValue) / 100,subtotal)
-            //     }else{
-            //         discount = Math.min(cart.coupon.discountValue,subtotal)
-            //     }
-            // }
+            res.status(201).json({
+                success: true,
+                message: "Order created successfully",
+                data: order
+            });
 
-            const shippingFee = subtotal >= 1000 ? 0 : 50
-            const tax = subtotal * 0.14
-            const totalPrice = subtotal + shippingFee + tax - discount
-
-            const order = await Order.create([{
-                user: req.user.id,
-                items: orderItems,
-                shippingAddress,
-                paymentMethod: paymentMethod || 'cash',
-                paymentStatus: 'pending',
-                subtotal,
-                shippingFee,
-                tax,
-                discount,
-                couponCode: cart.coupon?.code || null,
-                totalPrice,
-                customerNote
-            }], { session })
-            cart.items = []
-            cart.coupon = undefined
-
-            await cart.save({ session });
-            await session.commitTransaction();
-            try {
-                const emailMessage = `
-                    Thanks for order from us!
-                    orderId: ${order[0]._id}
-                    Total Price: ${order[0].totalPrice.toFixed(2)}
-                    ;
-                `
-                await sendEmail({
-                    to: req.user.email,
-                    subject: "Order Confirmation!",
-                    text: emailMessage
-                })
-            } catch (error) {
-                console.error('order confirmation could not be sent', error)
-            }
-            res.status(201).json({ success: true, data: order[0] });
         } catch (error) {
-            await session.abortTransaction()
-            next(error)
-        } finally {
-            session.endSession()
+            next(error);
         }
     },
+
+
 
     //@ GET logged in user orders
     //@ get/orders
@@ -192,20 +121,40 @@ const orderController = {
             if (order.status !== 'pending' && order.status !== 'confirmed') {
                 return next(new AppError(constantMessages.ORDER_CANNOT_CANCELLED, 400))
             }
-            order.status = 'cancelled'
-            order.paymentStatus = 'pending'
-            order.cancelledAt = Date.now()
-            await order.save({ session })
+            if (order.status === 'cancelled') {
+                throw new AppError('Order already cancelled', 400)
+            }
+
+            const restoreStock =
+                order.paymentMethod === "cash" || order.paymentStatus === "paid";
+
+            if (order.paymentMethod === 'stripe' && order.paymentStatus === 'paid') {
+                await stripe.refunds.create({
+                    payment_intent: order.transactionId
+                })
+                order.paymentStatus = "refunded";
+            }
 
             // if the order is cancelled restore the stock 
-            for (const item of order.items) {
-                const product = await Product.findOneAndUpdate(
-                    { _id: item.product },
-                    { $inc: { stock: item.quantity } },
-                    { session }
-                )
+            if (restoreStock) {
+                for (const item of order.items) {
+                    await Product.findByIdAndUpdate(
+                        item.product,
+                        {
+                            $inc: {
+                                stock: item.quantity,
+                            },
+                        },
+                        { session }
+                    );
+                }
             }
+
+            order.status = 'cancelled'
+            order.cancelledAt = Date.now()
+            await order.save({ session })
             await session.commitTransaction();
+
             res.status(200).json({ success: true, data: order });
         } catch (error) {
             await session.abortTransaction();
@@ -215,6 +164,23 @@ const orderController = {
         }
     },
 
+    //@Stripe Webhook
+
+    stripeWebHook: async (req, res, next) => {
+        console.log("🔥 CONTROLLER HIT");
+        try {
+
+            await orderService.stripeWebhook(req);
+
+            console.log("🔥 WEBHOOK FINISHED");
+
+            res.status(200).json({ received: true });
+
+        } catch (error) {
+            console.log("WEBHOOK ERROR:", error);
+            next(error);
+        }
+    }
 
 }
 

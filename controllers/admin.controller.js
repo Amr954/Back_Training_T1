@@ -3,6 +3,7 @@ const Cart = require('../models/cart.model')
 const Product = require('../models/product.model')
 const WishList = require('../models/wishlist.model')
 const User = require('../models/user.model')
+const stripe = require('../.config/stripe.config')
 const AppError = require('../services/AppError.service');
 const constantMessages = require('../services/constants')
 const sendEmail = require('../utils/sendEmail')
@@ -33,7 +34,7 @@ const adminController = {
             const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
 
             const sevenDaysAgo = new Date()
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate - 6)
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
 
             const [
                 totalRevenue,
@@ -291,17 +292,17 @@ const adminController = {
                 pending: ['confirmed', 'cancelled'],
                 confirmed: ['processing', 'cancelled'],
                 processing: ['shipped'],
-                shipped:['delivered'],
+                shipped: ['delivered'],
                 delivered: [],
                 cancelled: [],
                 returned: []
             }
 
-            if(order.status === 'cancelled'){
-                throw new AppError('Order already cancelled',400)
+            if (order.status === 'cancelled') {
+                throw new AppError('Order already cancelled', 400)
             }
-            if(order.status === 'delivered'){
-                throw new AppError('Order already delivered',400)
+            if (order.status === 'delivered') {
+                throw new AppError('Order already delivered', 400)
             }
             const allowedTransition = validTransitions[order.status]
             if (!allowedTransition || !allowedTransition.includes(status)) {
@@ -310,26 +311,47 @@ const adminController = {
             if (status === 'delivered') {
                 order.deliveredAt = Date.now()
                 if (order.paymentMethod === 'cash') {
-                    
+
                     order.paymentStatus = 'paid';
                     order.paidAt = new Date()
                 }
             }
-            
+
             if (status === 'cancelled') {
-                order.cancelledAt = Date.now()
+                const restoreStock =
+                    order.paymentMethod === "cash" || order.paymentStatus === "paid";
+
+                if (order.paymentMethod === 'stripe' && order.paymentStatus === 'paid') {
+                    await stripe.refunds.create({
+                        payment_intent: order.transactionId
+                    })
+                    order.paymentStatus = "refunded";
+                }
+
                 // if the order is cancelled restore the stock 
-                for (const item of order.items) {
-                    const product = await Product.findOneAndUpdate(
-                        { _id: item.product },
-                        { $inc: { stock: item.quantity } },
+                if (restoreStock) {
+                    await Promise.all(
+                        order.items.map((item) => {
+                            Product.findByIdAndUpdate(
+                                item.product, { $inc: { stock: item.quantity, }, }
+                            )
+                        })
                     )
                 }
-                if (order.paymentStatus === 'paid') {
-                    order.paymentStatus = 'pending'
+                order.cancelledAt = Date.now()
+            }
+            if (status === "delivered") {
+                order.deliveredAt = new Date();
+
+                if (order.paymentMethod === "cash") {
+                    order.paymentStatus = "paid";
+                    order.paidAt = new Date();
                 }
             }
             order.status = status
+            if (adminNote) {
+                order.adminNote = adminNote;
+            }
             await order.save()
             try {
                 const emailMessage = `

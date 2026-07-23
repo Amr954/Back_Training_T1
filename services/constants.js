@@ -47,6 +47,7 @@ const constantMessages = {
     // ORDERS
     ORDER_NOT_FOUND: 'Order not found',
     ORDER_CANNOT_CANCELLED: 'You can only cancel pending or confirmed orders.',
+    INVALID_PAYMENT_METHOD:'Invalid payment method'
 }
 
 

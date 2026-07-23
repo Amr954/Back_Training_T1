@@ -9,6 +9,7 @@ const orderRouter = require('./order.route')
 const adminRouter = require('./admin.route')
 
 
+
 router.use('/auth',authRouter)
 router.use('/users',userRouter)
 router.use('/products',productRouter)

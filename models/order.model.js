@@ -42,7 +42,8 @@ const orderSchema = new Schema({
     },
 
     transactionId: {
-        type: String
+        type: String,
+        trim: true
     },
 
     subtotal: {
