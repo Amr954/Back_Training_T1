@@ -7,11 +7,13 @@ const imageUpload = require('../middleware/uploads.middleware')
 
 const router = express.Router()
 
-router.post('/add',adminAuthorization,imageUpload.single('avatar'),validate(addUserSchema),userController.addUser)
+router.use(authentication);
+
+router.post('/add',adminAuthorization('admin'),imageUpload.single('avatar'),validate(addUserSchema),userController.addUser)
 router.post('/change-password',authentication,validate(changePasswordSchema),userController.changeUserPassword)
-router.get('/all',adminAuthorization,userController.getAllUsers)
-router.get('/:id',adminAuthorization,userController.getUser)
-router.patch('/:id',authentication,imageUpload.single('avatar'),validate(updateUserSchema),userController.updateUser)
-router.delete('/:id',adminAuthorization,userController.deleteUser)
+router.get('/all',adminAuthorization('admin'),userController.getAllUsers)
+router.get('/:id',adminAuthorization('admin'),userController.getUser)
+router.patch('/:id',imageUpload.single('avatar'),validate(updateUserSchema),userController.updateUser)
+router.delete('/:id',adminAuthorization('admin'),userController.deleteUser)
 
 module.exports = router

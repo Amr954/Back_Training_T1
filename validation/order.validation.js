@@ -46,5 +46,6 @@ const updateOrderStatusSchema = Joi.object({
 });
 
 module.exports = {
-    placeOrderSchema
+    placeOrderSchema,
+    updateOrderStatusSchema
 }

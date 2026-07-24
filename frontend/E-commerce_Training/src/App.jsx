@@ -9,34 +9,28 @@ console.log(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 function App() {
   const [clientSecret, setClientSecret] = useState("");
 
-  const createOrder = async () => {
-   try {
-     const res = await axios.post(
+const createOrder = async () => {
+    const res = await axios.post(
       "http://localhost:5000/api/orders",
       {
         paymentMethod: "stripe",
         shippingAddress: {
-          fullName: "Amr",
-          phone: "0120000030",
+          fullName: "Amr Reda",
+          phone: "01000000000",
           country: "Egypt",
-          city: "Giza",
-          address: "Street 1",
-          postalCode: "62511",
+          city: "Cairo",
+          address: "Nasr City",
+          postalCode: "11765",
         },
       },
       {
         headers: {
-          Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNGI1YTVmYmY1ZGZjMTY3NjQ1NWE1MSIsImlhdCI6MTc4NDgyNjMyMCwiZXhwIjoxNzg0ODI4MTIwfQ.j9sx5UWNCXJPb4-eZkUVSn_98dbWyhlHndMGVZdh8L8"
-          ,
+          Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNGI1YTVmYmY1ZGZjMTY3NjQ1NWE1MSIsImlhdCI6MTc4NDkxNzQxNiwiZXhwIjoxNzg0OTE5MjE2fQ.Am6kf8ilT6v5g6TYL0Kz6To82-spHsV2SnaCuz7a-Vk",
         },
       }
     );
-    setClientSecret(res.data.data.clientSecret);
-    console.log("CLIENT SECRET:", res.data.data.clientSecret);
-   } catch (error) {
-    console.log(error.response?.data);
-   }
 
+    setClientSecret(res.data.data.clientSecret);
   };
 
   return (

@@ -118,8 +118,8 @@ const adminController = {
                     {
                         $group: {
                             _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-                            total: { $sum: '$totalPrice' },
-                            revenue: { $sum: 1 }
+                            revenue: { $sum: '$totalPrice' },
+                            orders: { $sum: 1 }
                         }
                     },
                     { $sort: { _id: 1 } }
@@ -144,8 +144,12 @@ const adminController = {
             const totalRevenues = totalRevenue[0]?.total || 0
             const thisMonthRevenue = thisMonthRevenueResult[0]?.total || 0
             const lastMonthRevenue = lastMonthRevenueResult[0]?.total || 0
-            let growthPercentRate = lastMonthRevenue > 0
-                ? Math.round(((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100) : 0
+            let growthPercentRate; 
+            if(lastMonthRevenue > 0){
+                growthPercentRate= Math.round(((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100)
+            }else{
+                 growthPercentRate = thisMonthRevenue > 0 ? 100 : 0
+            }
 
             res.status(200).json({
                 success: true,
@@ -268,9 +272,7 @@ const adminController = {
 
     getSingleOrder: async (req, res, next) => {
         try {
-            const order = await Order.findOne({
-                _id: req.params.id, user: req.user.id
-            }).populate('user', 'userName email phone').lean()
+            const order = await Order.findOne({_id: req.params.id}).populate('user', 'userName email phone').lean()
             if (!order) { return next(new AppError(constantMessages.ORDER_NOT_FOUND, 404)) }
             res.status(200).json({ success: true, data: order })
         } catch (error) {

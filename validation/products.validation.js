@@ -2,6 +2,7 @@ const Joi = require('joi')
 
 const createProductSchema = Joi.object({
     name: Joi.string()
+        .trim()
         .max(200)
         .required()
         .messages({
@@ -10,6 +11,7 @@ const createProductSchema = Joi.object({
         }),
 
     shortDescription: Joi.string()
+        .trim()
         .max(500)
         .required()
         .messages({
@@ -18,6 +20,7 @@ const createProductSchema = Joi.object({
         }),
 
     description: Joi.string()
+        .trim()
         .required()
         .messages({
             'string.empty': 'Description is required'
@@ -50,14 +53,15 @@ const createProductSchema = Joi.object({
     sku: Joi.string().optional(),
 
     category: Joi.string()
+        .trim()
         .required()
         .messages({
             'string.empty': 'Category is required'
         }),
 
-    subcategory: Joi.string().optional(),
+    subcategory: Joi.string().trim().optional(),
 
-    brand: Joi.string().optional(),
+    brand: Joi.string().trim().optional(),
 
     // form-data sends this as a single string like "red,summer" — split it before/after validation.
     // This accepts either a raw comma-separated string or an already-split array.
@@ -75,13 +79,13 @@ const createProductSchema = Joi.object({
 })
 
 const updateProductSchema = Joi.object({
-    name: Joi.string().max(200).optional().messages({
+    name: Joi.string().trim().max(200).optional().messages({
         'string.max': 'Product name cannot exceed 200 characters'
     }),
-    shortDescription: Joi.string().max(500).optional().messages({
+    shortDescription: Joi.string().trim().max(500).optional().messages({
         'string.max': 'Short description cannot exceed 500 characters'
     }),
-    description: Joi.string().optional(),
+    description: Joi.string().trim().optional(),
     price: Joi.number().min(0).optional().messages({
         'number.min': 'Price cannot be negative'
     }),
@@ -93,9 +97,9 @@ const updateProductSchema = Joi.object({
         'number.min': 'Stock cannot be negative'
     }),
     sku: Joi.string().optional(),
-    category: Joi.string().optional(),
-    subcategory: Joi.string().optional(),
-    brand: Joi.string().optional(),
+    category: Joi.string().trim().optional(),
+    subcategory: Joi.string().trim().optional(),
+    brand: Joi.string().trim().optional(),
     tags: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string()).optional(),
     featured: Joi.boolean().optional(),
     isActive: Joi.boolean().optional(),
@@ -105,11 +109,11 @@ const updateProductSchema = Joi.object({
 })
 
 const addReviewSchema = Joi.object({
-    rating:Joi.number().integer().min(1).max(5).required().messages({
-        'message':'Rating must be an integer number between 1 & 5'
+    rating: Joi.number().integer().min(1).max(5).required().messages({
+        'message': 'Rating must be an integer number between 1 & 5'
     }),
-    comment:Joi.string().max(1000).required().messages({
-        'message':'Comment is required.'
+    comment: Joi.string().max(1000).required().messages({
+        'message': 'Comment is required.'
     })
 })
 

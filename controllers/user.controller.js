@@ -12,6 +12,7 @@ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const userController = {
     addUser: async (req, res, next) => {
+        let uploadedPublicId = null
         try {
             const userFields = ["userName", "email", "address", "phone", "role", "isVerified", "password"]
 
@@ -27,6 +28,8 @@ const userController = {
             })
             if (req.file) {
                 const result = await uploadToCloudinary(req.file.buffer, 'avatars')
+
+                uploadedPublicId = result.public_id
                 userData.avatar = {
                     url: result.secure_url,
                     publicId: result.public_id
@@ -39,6 +42,13 @@ const userController = {
                 data: user
             })
         } catch (err) {
+            if (uploadedPublicId) {
+                try {
+                    await cloudinary.uploader.destroy(uploadedPublicId)
+                } catch (cleanUpErr) {
+                    logger.error(cleanUpErr.message)
+                }
+            }
             logger.error(err.message)
             next(err)
         }
@@ -106,6 +116,7 @@ const userController = {
     },
 
     updateUser: async (req, res, next) => {
+        let newUploadPublicId = null
         try {
             if (req.user.role !== 'admin' && req.user.id !== req.params.id) {
                 return next(new AppError(constantMessages.USER_NOT_AUTHORIZED, 403))
@@ -125,24 +136,26 @@ const userController = {
             })
 
             if (req.user.role === 'admin' && req.body.email) {
-                const emailExists = await User.findOne({ email: req.body.email, _id: { $ne: req.params.id }});
+                const emailExists = await User.findOne({ email: req.body.email, _id: { $ne: req.params.id } });
                 if (emailExists) {
                     return next(new AppError(constantMessages.USER_ALREADY_EXISTS, 400));
                 }
             }
-
+            let existingAvatarPublicId = null
             if (req.file) {
                 const existingUser = await User.findById(req.params.id).select('avatar')
 
+                existingAvatarPublicId = existingUser?.avatar?.publicId || null
+
                 const result = await uploadToCloudinary(req.file.buffer, 'avatars')
+
+                newUploadPublicId = result.public_id
                 updates.avatar = {
                     url: result.secure_url,
                     publicId: result.public_id
                 }
 
-                if (existingUser?.avatar?.publicId) {
-                    await cloudinary.uploader.destroy(existingUser.avatar.publicId)
-                }
+
 
             }
             if (Object.keys(updates).length === 0) {
@@ -152,15 +165,27 @@ const userController = {
             const user = await User.findByIdAndUpdate(req.params.id, updates, {
                 new: true,
                 runValidators: true
-            }).select('+password -tokens -resetPasswordToken -resetPasswordExpires')
+            }).select('-password -tokens -resetPasswordToken -resetPasswordExpires')
 
             if (!user) { return next(new AppError(constantMessages.USER_NOT_FOUND, 404)) }
+
+            if (existingAvatarPublicId) {
+                await cloudinary.uploader.destroy(existingUser.avatar.publicId)
+            }
+
             res.status(200).json({
                 success: true,
-                message:'User updated successfully',
+                message: 'User updated successfully',
                 data: user
             })
         } catch (err) {
+            if (newUploadPublicId) {
+                try {
+                    await cloudinary.uploader.destroy(newUploadPublicId)
+                } catch (cleanUpErr) {
+                    logger.error(cleanUpErr.message)
+                }
+            }
             logger.error(err.message)
             next(err)
         }
@@ -183,38 +208,39 @@ const userController = {
 
             const isMatch = await user.compareUserPass(oldPassword)
             if (!isMatch) {
-                return next(new AppError(constantMessages.INCORRECT_OLD_PASSWORD, 40))
+                return next(new AppError(constantMessages.INCORRECT_OLD_PASSWORD, 400))
             }
             user.password = newPassword
             await user.save()
-            return next(new AppError(constantMessages.PASSWORD_UPDATED, 200))
+            
+            res.status(200).json({
+                success: true,
+                message: constantMessages.PASSWORD_UPDATED
+            })
         } catch (err) {
             logger.error(err.message)
             next(err)
         }
     },
 
-    deleteUser: async (req, res) => {
+    deleteUser: async (req, res, next) => {
         try {
             if (req.user.id === req.params.id) {
                 return next(new AppError(constantMessages.USER_CANNOT_DELETE_SELF, 400));
             }
             const user = await User.findById(req.params.id);
-            if (!user) { return next(new AppError(constantMessages.USER_NOT_FOUND,404)) }
+            if (!user) { return next(new AppError(constantMessages.USER_NOT_FOUND, 404)) }
 
-            if (user.avatar?.publicId) {
-                await cloudinary.uploader.destroy(user.avatar.publicId)
-            }
-            await User.findByIdAndDelete(req.params.id);
-            res.json({
-                message: "User deleted successfully!",
+            user.isActive = false
+            await user.save();
+
+            res.status(200).json({
+                success: true,
                 data: {}
             })
         } catch (err) {
             logger.error(err.message)
-            res.status(400).send({
-                message: err.message
-            })
+            next(err)
         }
     }
 }

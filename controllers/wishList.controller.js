@@ -4,10 +4,11 @@ const AppError = require('../services/AppError.service');
 const constantMessages = require('../services/constants');
 
 const getWishListOrCreateIt = async (req) => {
-    let userWishList = await WishList.findOne({ user: req.user.id })
-    if (!userWishList) {
-        userWishList = await WishList.create({ user: req.user.id, products: [] })
-    }
+    const userWishList = await WishList.findOneAndUpdate(
+        { user: req.user.id },
+        { $setOnInsert: { user: req.user.id, products: [] } },
+        { new: true, upsert: true }
+    )
     return userWishList
 }
 
@@ -33,18 +34,18 @@ const wishListController = {
         try {
             const product = await Product.findById(req.params.productId)
             if (!product) { return next(new AppError(constantMessages.PRODUCT_NOT_FOUND, 404)) }
-            let wishlist = await WishList.findOne({ user: req.user._id });
-            if (!wishlist) {
-                wishlist = await WishList.create({ user: req.user._id, products: [] });
-            }
-            const exist = wishlist.products.find((item) => item._id.toString() === req.params.productId)
-            if (exist) {
-                console.log(wishlist.products);
-                return next(new AppError(constantMessages.PRODUCT_IN_WISHLIST, 400))
-            }
-            wishlist.products.push(req.params.productId)
+            if (!product.isActive) return next(new AppError(constantMessages.PRODUCT_INACTIVE, 400));
+
+            const wishlist = await WishList.findOneAndUpdate(
+                { user: req.user.id },
+                {
+                    $addToSet: { products: req.params.productId },
+                    $setOnInsert: { user: req.user.id }
+                },
+                { new: true, upsert: true }
+            )
             await wishlist.save()
-            // await wishlist.populate('products', 'name images price discountPrice slug')
+
             res.status(200).json({ success: true, message: "Added to wishlist", data: wishlist });
         } catch (error) {
             next(error)
@@ -57,11 +58,14 @@ const wishListController = {
 
     removeFromWishList: async (req, res, next) => {
         try {
-            const wishlist = await WishList.findOne({ user: req.user.id })
+            const wishlist = await WishList.findOneAndUpdate(
+                { user: req.user.id },
+                { $pull: { products: req.params.productId } },
+                { new: true }
+            )
             if (!wishlist) {
                 return next(new AppError(constantMessages.WISHLIST_NOT_FOUND, 404))
             }
-            wishlist.products = wishlist.products.filter((item) => item._id.toString() !== req.params.productId)
             await wishlist.save();
 
             res.status(200).json({ success: true, data: wishlist });
@@ -76,11 +80,14 @@ const wishListController = {
 
     clearWishList: async (req, res, next) => {
         try {
-            const wishlist = await WishList.findOne({ user: req.user.id })
+            const wishlist = await WishList.findOneAndUpdate(
+                { user: req.user.id },
+                { $set: { products: [] } },
+                { new: true }
+            )
             if (!wishlist) {
                 return next(new AppError(constantMessages.WISHLIST_NOT_FOUND, 404))
             }
-            wishlist.products = []
             await wishlist.save()
 
             res.status(200).json({ success: true, data: wishlist });

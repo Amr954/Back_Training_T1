@@ -1,5 +1,8 @@
 const Joi = require('joi')
 
+
+const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+
 const newUserSchema = Joi.object({
     userName: Joi.string().alphanum().min(3).max(30).required(),
     email: Joi.string().email({
@@ -28,13 +31,8 @@ const verifyOtpSchema =Joi.object({
 /* ---------------------------------------- */
 
 const logInSchema = Joi.object({
-    email: Joi.string().email({
-        minDomainSegments: 2,
-        tlds: { allow: ['com', 'net'] },
-    }).required(),
-    password: Joi.string().pattern(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$/
-    ).required()
+    email: Joi.string().email().required(),
+    password: Joi.string().pattern(PASSWORD_PATTERN).required()
 })
 
 /* ---------------------------------------- */
@@ -47,24 +45,18 @@ const forgotPasswordSchema = Joi.object({
 
 const resetPasswordSchema = Joi.object({
     token:Joi.string().required(),
-    newPassword: Joi.string().pattern(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$/
-    )
+    newPassword: Joi.string().pattern(PASSWORD_PATTERN).required()
 })
 
 const changePasswordSchema = Joi.object({
-    oldPassword: Joi.string().pattern(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$/
-    ).required(),
-    newPassword: Joi.string().pattern(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$/
-    )
+    oldPassword: Joi.string().pattern(PASSWORD_PATTERN).required(),
+    newPassword: Joi.string().pattern(PASSWORD_PATTERN)
 })
 
 const addUserSchema = Joi.object({
     userName: Joi.string().required(),
     email: Joi.string().email().required(),
-    password: Joi.string().min(8).required(),
+    password: Joi.string().pattern(PASSWORD_PATTERN).min(8).required(),
     phone: Joi.string().optional(),
     address: Joi.string().optional(),
     role: Joi.string().valid('admin', 'customer').optional(),

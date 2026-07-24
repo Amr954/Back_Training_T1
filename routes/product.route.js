@@ -15,19 +15,21 @@ router.get('/:id/reviews', productController.getReviews)
 
 /* ----------------------------------- */
 // @ POST
-router.post('/', adminAuthorization, imageUpload.array('images', 5),
+router.post('/', authentication, adminAuthorization('admin'), imageUpload.array('images', 5),
     validate(createProductSchema), productController.createProduct)
 
-router.post('/:id/reviews', authentication,validate(addReviewSchema) ,productController.addReview)
+router.post('/:id/reviews', authentication, validate(addReviewSchema), productController.addReview)
 /* ----------------------------------- */
 // @ PUT
 
-router.put('/update/:id', adminAuthorization, imageUpload.array('images', 5), validate(updateProductSchema)
-    , productController.updateProduct)
+router.put('/update/:id', authentication, adminAuthorization('admin'), 
+imageUpload.array('images', 5), 
+validate(updateProductSchema), 
+productController.updateProduct)
 
 /* ----------------------------------- */
 // @ DELETE
-router.delete('/:id', adminAuthorization, productController.deleteProduct)
+router.delete('/:id', authentication, adminAuthorization('admin'), productController.deleteProduct)
 router.delete('/:id/reviews/:rid', authentication, productController.deleteReview)
 
 module.exports = router

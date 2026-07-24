@@ -42,6 +42,13 @@ const uploadImages = async (files, folder = 'products') => {
 
 }
 
+const rollbackImages = async (images = []) => {
+    if (!images.length) return
+    await Promise.allSettled(
+        images.map(image => cloudinary.uploader.destroy(image.publicId))
+    )
+}
+
 /*************** 
   @ Handle product Controller
  ***************/
@@ -142,6 +149,7 @@ const productController = {
     // @auth  Admin
 
     createProduct: async (req, res, next) => {
+        let uploadedImages = []
         try {
             req.body.createdBy = req.user.id
 
@@ -156,7 +164,8 @@ const productController = {
             if (!req.files || req.files.length === 0) {
                 return res.status(400).json({ success: false, message: 'At least one product image is required' })
             }
-            req.body.images = await uploadImages(req.files)
+            uploadedImages = await uploadImages(req.files)
+            req.body.images = uploadedImages
 
             // tags can arrive as "red,summer" (form-data sends strings) or already as an array
             if (req.body.tags && typeof req.body.tags === 'string') {
@@ -164,7 +173,13 @@ const productController = {
             }
 
             const product = new Product(req.body)
-            await product.save()
+            try {
+                await product.save()
+            } catch (saveError) {
+
+                await rollbackImages(uploadedImages)
+                throw saveError
+            }
             res.status(201).json({ success: true, message: "Product created successfully", data: product })
         } catch (error) {
             next(error)
@@ -217,38 +232,48 @@ const productController = {
             await product.validate()
 
             const publicIDs = product.images.map(img => img.publicId)
-
+            let newlyUploadedImages = []
             // upload images first 
-            if (req.files?.length) {
-                const newImages = await uploadImages(req.files)
-                product.images.push(...newImages)
-            }
-            if (req.body.imagesToDelete) {
-                let idToDelete;
-                try {
-                    idToDelete = JSON.parse(req.body.imagesToDelete)
-
-                } catch (error) {
-                    return next(error)
-                };
-                if (!Array.isArray(idToDelete)) {
-                    return res.status(400).json({ message: "imagesToDelete must be an array" })
+            try {
+                // upload images first
+                if (hasNewImages) {
+                    newlyUploadedImages = await uploadImages(req.files)
+                    product.images.push(...newlyUploadedImages)
                 }
-                const validIdToDelete = idToDelete.filter(id => publicIDs.includes(id))
 
-                if (validIdToDelete.length > 0) {
-                    await Promise.allSettled(
-                        validIdToDelete.map((publicId => cloudinary.uploader.destroy(publicId)))
-                    )
-                    product.images = product.images.filter(img => !validIdToDelete.includes(img.publicId))
+                if (hasImageDeletions) {
+                    let idToDelete;
+                    try {
+                        idToDelete = JSON.parse(req.body.imagesToDelete)
+                    
+                    } catch (parseError) {
+                        throw new AppError('imagesToDelete must be valid JSON', 400)
+                    }
+                    
+                    if (!Array.isArray(idToDelete)) {
+                        throw new AppError('imagesToDelete must be an array', 400)
+                    }
+                    
+                    const validIdToDelete = idToDelete.filter(id => publicIDs.includes(id))
+
+                    if (validIdToDelete.length > 0) {
+                        await Promise.allSettled(
+                            validIdToDelete.map((publicId => cloudinary.uploader.destroy(publicId)))
+                        )
+                        product.images = product.images.filter(img => !validIdToDelete.includes(img.publicId))
+                    }
                 }
-            }
 
-            if (product.images.length === 0) {
-                return res.status(400).json({ message: 'Product must have at least one image' })
-            }
+                if (product.images.length === 0) {
+                    throw new AppError('Product must have at least one image', 400)
+                }
 
-            await product.save()
+                await product.save()
+            } catch (error) {
+
+                await rollbackImages(newlyUploadedImages)
+                throw error
+            }
             res.status(200).json({ success: true, message: "Product updated successfully", data: product })
 
         } catch (error) {
@@ -264,11 +289,7 @@ const productController = {
         try {
             const product = await Product.findById(req.params.id)
             if (!product) { return next(new AppError(constantMessages.PRODUCT_NOT_FOUND, 404)) }
-            if (product.images?.length) {
-                await Promise.all(
-                    product.images.map(image => cloudinary.uploader.destroy(image.publicId))
-                )
-            }
+
             product.isActive = false;
             await product.save()
 

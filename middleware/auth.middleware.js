@@ -1,4 +1,5 @@
-const  User  = require("../models/user.model")
+const User = require("../models/user.model")
+const constantMessages = require("../services/constants")
 const loggerEvent = require('../services/logger.service')
 const logger = loggerEvent('auth')
 const jwt = require('jsonwebtoken')
@@ -10,12 +11,26 @@ const authentication = async (req, res, next) => {
 
         const token = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null
         if (!token) {
-            return res.status(401).send({ message: "unauthorized user" })
+            return next(new AppError(constantMessages.NOT_AUTHORIZED, 401));
         }
         const secretKey = process.env.ACCESS_TOKEN_SECRET;
         let valid
         try {
             valid = jwt.verify(token, secretKey) // sync, no await needed
+
+            req.user = await User.findById(valid.id).select("-password -tokens")
+            if (!req.user) {
+                return next(new AppError(MESSAGES.USER_DELETED_TOKEN, 401));
+            }
+            // Check if user is deactivated
+            if (req.user.isActive === false) {
+                return next(new AppError(constantMessages.ACCOUNT_DEACTIVATED, 403));
+            }
+
+            // Check if user is verified
+            if (!req.user.isVerified) {
+                return next(new AppError(constantMessages.EMAIL_NOT_VERIFIED, 403));
+            }
         } catch (err) {
             if (err.name === "TokenExpiredError") {
                 return res.status(401).send({
@@ -23,15 +38,9 @@ const authentication = async (req, res, next) => {
                     code: "TOKEN_EXPIRED" // frontend can check this and call /refresh
                 })
             }
-            return res.status(401).send({ message: "unauthorized user" })
+            return next(new AppError(constantMessages.NOT_AUTHORIZED, 401));
         }
 
-        const user = await User.findById(valid.id).select("-password -tokens")
-        if (!user) {
-            return res.status(401).send({ message: "unauthorized user" })
-        }
-
-        req.user = user
         next()
 
     } catch (err) {
@@ -40,18 +49,13 @@ const authentication = async (req, res, next) => {
     }
 }
 
-const adminAuthorization = (req, res, next) => {
-    authentication(req, res, () => {
-        try {
-            if (req.user.role !== 'admin') {
-                return res.status(403).send({ message: "unauthorized Admin" })
-            }
-            next()
-        } catch (err) {
-            logger.error(err.message)
-            res.status(500).send({ message: err.message })
+const adminAuthorization = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return next(new AppError(constantMessages.NOT_AUTHORIZED_ROLE, 403));
         }
-    })
+        next();
+    };
 }
 
 module.exports = {

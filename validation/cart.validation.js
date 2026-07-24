@@ -1,7 +1,7 @@
 const Joi = require('joi');
 
 const addItemToCartSchema = Joi.object({
-  productId: Joi.string().required().messages({
+  productId: Joi.string().trim().hex().length(24).required().messages({
     'any.required': 'Product ID is required'
   }),
   quantity: Joi.number().integer().min(1).required().messages({
@@ -12,7 +12,7 @@ const addItemToCartSchema = Joi.object({
 });
 
 const updateItemQuantitySchema = Joi.object({
-  productId: Joi.string().required().messages({
+  productId: Joi.string().trim().hex().length(24).required().messages({
     'any.required': 'Product ID is required'
   }),
   quantity: Joi.number().integer().min(1).required().messages({

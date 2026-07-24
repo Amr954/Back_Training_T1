@@ -8,28 +8,32 @@ function Checkout() {
   const stripe = useStripe();
   const elements = useElements();
 
-  const pay = async (e) => {
-    e.preventDefault();
-    if (!stripe || !elements) return;
+ const pay = async (e) => {
+  e.preventDefault();
 
-    const result = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
+  console.log("PAY CLICKED");
+
+  if (!stripe || !elements) {
+    console.log("Stripe not ready");
+    return;
+  }
+
+  const result = await stripe.confirmPayment({
+    elements,
+    confirmParams: {
         return_url: "http://localhost:5173",
       },
-      redirect: "if_required",
-    });
+  });
 
-    console.log("RESULT:", result);
+  // console.log("RESULT:", result);
 
-    if (result.error) {
-      console.log(result.error);
-    }
+  if (result.error) {
+    console.log(result.error);
+    return;
+  }
 
-    if (result.paymentIntent) {
-      console.log(result.paymentIntent.status);
-    }
-  };
+  // console.log("STATUS:", result.paymentIntent.status);
+};
 
   return (
     <form onSubmit={pay}>

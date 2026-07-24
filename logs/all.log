@@ -129,3 +129,5 @@
 2026-07-18 21-51-15 | WARN | ["Payment method must be one of: cash or stripe"]
 2026-07-21 19-36-53 | WARN | ["Shipping address is required","\"productId\" is not allowed","\"quantity\" is not allowed"]
 2026-07-21 20-16-43 | WARN | ["Shipping address is required","\"productId\" is not allowed","\"quantity\" is not allowed"]
+2026-07-24 21-15-32 | ERROR | user is not defined
+2026-07-24 21-19-46 | ERROR | user is not defined

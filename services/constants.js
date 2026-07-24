@@ -13,7 +13,9 @@ const constantMessages = {
     INCORRECT_OLD_PASSWORD: 'Incorrect old password',
     INVALID_TOKEN: 'Invalid token. Please log in again.',
     TOKEN_EXPIRED: 'Your token has expired. Please refresh.',
-
+    ACCOUNT_DEACTIVATED: 'Your account has been deactivated. Please contact support',
+    USER_DELETED_TOKEN:'This account no longer exists. Please log in again',
+    NOT_AUTHORIZED_ROLE: 'Not authorized role',
 
     // User
     USER_NOT_FOUND: 'User not found',
@@ -28,12 +30,12 @@ const constantMessages = {
     PRODUCT_NOT_FOUND: 'Product not found',
     PRODUCT_INACTIVE: 'Inactive Product.',
     PRODUCT_ALREADY_REVIEWED: 'Product already reviewed once before.',
-    PRODUCT_SKU_CHECK:'Product with same sku already exist',
-    NOT_ENOUGH_STOCK:'Items in stock not enough.',
+    PRODUCT_SKU_CHECK: 'Product with same sku already exist',
+    NOT_ENOUGH_STOCK: 'Items in stock not enough.',
     // Reviews
     REVIEW_NOT_FOUND: 'Review not found',
     NOT_AUTHORIZED_REVIEW: 'Not authorized to delete this review',
-    
+
     // CART
     CART_CREATED: 'Cart created successfully!',
     EMPTY_CART: 'Empty Cart!',
@@ -47,7 +49,7 @@ const constantMessages = {
     // ORDERS
     ORDER_NOT_FOUND: 'Order not found',
     ORDER_CANNOT_CANCELLED: 'You can only cancel pending or confirmed orders.',
-    INVALID_PAYMENT_METHOD:'Invalid payment method'
+    INVALID_PAYMENT_METHOD: 'Invalid payment method'
 }
 
 

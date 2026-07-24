@@ -19,6 +19,6 @@ router.post("/forgot-password/verify-otp", validate(resetPasswordSchema),authCon
 router.get('/me', authentication,authController.getUser)
 router.post("/logout",authentication,authController.logOut);
 router.post('/refresh', authController.refresh)
-router.patch('/change-role/:id', adminAuthorization, validate(changeRoleSchema), authController.changeUserRole)
+router.patch('/change-role/:id',authentication ,adminAuthorization('admin'), validate(changeRoleSchema), authController.changeUserRole)
 
 module.exports = router

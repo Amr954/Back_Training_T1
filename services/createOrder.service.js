@@ -164,7 +164,8 @@ const createStripeOrder = async (userId, orderDetails) => {
                 orderId: order._id.toString(),
             },
         });
-
+        console.log("PI ID:", paymentIntent.id);
+        console.log("CLIENT SECRET:", paymentIntent.client_secret);
         order.transactionId = paymentIntent.id;
         await order.save({ session });
         await session.commitTransaction();
@@ -214,7 +215,8 @@ module.exports = {
     stripeWebhook: async (req) => {
         console.log("🔥 SERVICE HIT");
         const signature = req.headers["stripe-signature"];
-
+        console.log(Buffer.isBuffer(req.body));
+        console.log(req.body.constructor.name);
         const event = stripe.webhooks.constructEvent(
             req.body,
             signature,
@@ -386,4 +388,3 @@ module.exports = {
 
 
 
-    

@@ -1,8 +1,6 @@
 require('dotenv').config()
 const express = require('express')
 const app = express()
-console.log("SERVER FILE:", __filename);
-console.log("WORKING DIR:", process.cwd());
 const routes = require('./routes')
 const cors=require('cors')
 const webHook = require('./routes/webhook.route')
@@ -17,7 +15,7 @@ app.use(cors({
     origin: "http://localhost:5173",
     credentials: true,
 }));
-console.log("WEBHOOK ROUTE REGISTERED");
+
 app.use('/api/stripe', webHook)
 
 app.use(express.json())
@@ -30,5 +28,3 @@ app.listen(port, () => {
 })
 // -------------------------
 
-// const crypto = require('crypto')
-// console.log(crypto.randomBytes(32).toString("hex"));

@@ -1,9 +1,11 @@
 const express = require('express')
 const router = express.Router()
 const adminController = require('../controllers/admin.controller')
-const { adminAuthorization } = require('../middleware/auth.middleware')
+const { adminAuthorization, authentication } = require('../middleware/auth.middleware')
+const validate = require('../middleware/validate.middleware')
+const { updateOrderStatusSchema } = require('../validation/order.validation')
 
-router.use(adminAuthorization)
+router.use(authentication,adminAuthorization('admin'))
 
 //@GET
 // Static routes comes before dynamic routes
@@ -17,7 +19,7 @@ router.get('/wishlists',adminController.getAllWishLists)
 router.get('/:id',adminController.getSingleOrder)
 
 //@PATCH
-router.patch('/:id/status',adminController.updateOrderStatus)
+router.patch('/:id/status',validate(updateOrderStatusSchema),adminController.updateOrderStatus)
 
 
 module.exports = router

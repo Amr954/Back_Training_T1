@@ -58,11 +58,16 @@ const userController = {
             }
             await otpDoc.save()
 
-            await sendEmail({
-                to: email,
-                subject: "Verify your email - TEcommerceApi",
-                text: `Your verification code is ${otpCode}. It expires in ${OTP_EXPIRY_MINUTES} minutes.`
-            })
+            try {
+                await sendEmail({
+                    to: email,
+                    subject: "Verify your email - TEcommerceApi",
+                    text: `Your verification code is ${otpCode}. It expires in ${OTP_EXPIRY_MINUTES} minutes.`
+                })
+            } catch (error) {
+                await OTP.deleteOne({ email })
+                next(error)
+            }
 
             res.status(200).send({
                 message: constantMessages.OTP_SENT
@@ -128,8 +133,10 @@ const userController = {
             if (!user) {
                 return next(new AppError(constantMessages.INVALID_CREDENTIALS, 401));
             }
+            if (user.isActive === false) return next(new AppError('Your account has been deactivated', 403));
+
             if (!user.isVerified) return next(new AppError(constantMessages.EMAIL_NOT_VERIFIED, 403));
-            
+
             const isMatch = await bcryptjs.compare(password, user.password)
             if (!isMatch) {
                 return next(new AppError(constantMessages.INVALID_CREDENTIALS, 401));
@@ -227,7 +234,6 @@ const userController = {
 
     refresh: async (req, res, next) => {
         try {
-            console.log("cookies received:", req.cookies)
             const refreshToken = req.cookies?.refresh_token
             if (!refreshToken) {
                 return res.status(401).send({ message: "no refresh token provided" })
@@ -240,6 +246,8 @@ const userController = {
             }
 
             const user = await User.findById(decoded.id)
+            if (!user || user.isActive === false) return next(new AppError(constantMessages.USER_NOT_FOUND, 401));
+
             if (!user || !user.tokens.includes(refreshToken)) {
                 return res.status(403).send({ message: constantMessages.INVALID_TOKEN })
             }
@@ -251,7 +259,6 @@ const userController = {
             user.tokens.push(newRefreshToken)
             await user.save()
 
-            // res.cookie("access_token", newAccessToken, cookieOptions.access)
             res.cookie("refresh_token", newRefreshToken, cookieOptions.refresh)
 
             res.status(200).json({
@@ -288,7 +295,7 @@ const userController = {
                 }
             }
             res.clearCookie("refresh_token")
-            res.status(200).send({ message: constantMessages.LOGGED_OUT})
+            res.status(200).send({ message: constantMessages.LOGGED_OUT })
         } catch (err) {
             logger.error(err.message)
             next(err)
@@ -298,19 +305,19 @@ const userController = {
     changeUserRole: async (req, res, next) => {
         try {
             const { role } = req.body
-            if (req.user.role === req.params.role) {
-                 return next(new AppError(constantMessages.USER_CANNOT_CHANGE_OWN_ROLE, 400));
+            const user = await User.findById(req.params.id);
+            if (!user) return next(new AppError(constantMessages.USER_NOT_FOUND, 404));
+            
+            if (req.params.id === req.user._id.toString()) {
+                return next(new AppError(constantMessages.USER_CANNOT_CHANGE_OWN_ROLE, 400));
             }
-            const user = await User.findByIdAndUpdate(req.params.id,
-                { role },
-                { new: true, runValidators: true }
-            ).select('-password -tokens -resetPasswordToken -resetPasswordExpires')
-            if (!user) {
-                return next(new AppError(constantMessages.USER_NOT_FOUND,404))
-            }
+            
+            user.role = role;
+            await user.save();
+            
             res.status(200).json({
                 success: true,
-                message: `User role updated to admin`,
+                message: `User role updated to ${role}`,
                 data: user
             })
         } catch (err) {
