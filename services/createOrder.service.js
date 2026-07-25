@@ -4,8 +4,8 @@ const Product = require('../models/product.model')
 const User = require('../models/user.model')
 const stripe = require('../.config/stripe.config')
 const mongoose = require('mongoose');
-const AppError = require('../services/AppError.service');
-const constantMessages = require('../services/constants')
+const AppError = require('../utils/AppError');
+const constantMessages = require('../utils/constants')
 const sendEmail = require('../utils/sendEmail')
 
 
