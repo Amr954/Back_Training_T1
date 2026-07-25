@@ -1,12 +1,12 @@
 const User = require('../models/user.model')
 const bcryptjs = require('bcryptjs')
-const loggerEvent = require('../services/logger.service')
+const loggerEvent = require('../utils/logger.service')
 const { log } = require('winston')
 const logger = loggerEvent('user')
 const cloudinary = require('../.config/cloudinary')
 const uploadToCloudinary = require('../utils/uploadToCloudinary')
-const AppError = require('../services/AppError.service')
-const constantMessages = require('../services/constants')
+const AppError = require('../utils/AppError');
+const constantMessages = require('../utils/constants')
 
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -78,7 +78,7 @@ const userController = {
             const [users, totalItems] = await Promise.all([
                 User.find(filter)
                     .select('-password -tokens -resetPasswordToken -resetPasswordExpires') // hide sensitive fields')
-                    .sort({ _id: -1 }) // newest users first
+                    .sort({ _id: -1 })
                     .skip(skip)
                     .limit(limit),
                 User.countDocuments(filter)

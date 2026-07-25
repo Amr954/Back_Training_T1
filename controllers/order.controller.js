@@ -4,8 +4,8 @@ const Product = require('../models/product.model')
 const orderService = require('../services/createOrder.service')
 const stripe = require('../.config/stripe.config')
 const mongoose = require('mongoose');
-const AppError = require('../services/AppError.service');
-const constantMessages = require('../services/constants')
+const AppError = require('../utils/AppError');
+const constantMessages = require('../utils/constants')
 const sendEmail = require('../utils/sendEmail')
 
 /* Handle Order using mongoose Transactions */
@@ -167,23 +167,13 @@ const orderController = {
     //@Stripe Webhook
 
     stripeWebHook: async (req, res, next) => {
-        console.log("🔥 CONTROLLER HIT");
         try {
-
             await orderService.stripeWebhook(req);
-
-            console.log("🔥 WEBHOOK FINISHED");
-
             res.status(200).json({ received: true });
-
         } catch (error) {
-            console.log("WEBHOOK ERROR:", error);
             next(error);
         }
     }
-
-}
-
-
+};
 
 module.exports = orderController

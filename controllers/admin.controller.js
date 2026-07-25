@@ -4,8 +4,8 @@ const Product = require('../models/product.model')
 const WishList = require('../models/wishlist.model')
 const User = require('../models/user.model')
 const stripe = require('../.config/stripe.config')
-const AppError = require('../services/AppError.service');
-const constantMessages = require('../services/constants')
+const AppError = require('../utils/AppError');
+const constantMessages = require('../utils/constants')
 const sendEmail = require('../utils/sendEmail')
 const { warn } = require('winston')
 
@@ -309,15 +309,7 @@ const adminController = {
             if (!allowedTransition || !allowedTransition.includes(status)) {
                 return next(new AppError('Cannot complete this status transition because it is not allowed', 400))
             }
-            if (status === 'delivered') {
-                order.deliveredAt = Date.now()
-                if (order.paymentMethod === 'cash') {
-
-                    order.paymentStatus = 'paid';
-                    order.paidAt = new Date()
-                }
-            }
-
+            
             if (status === 'cancelled') {
                 const restoreStock =
                     order.paymentMethod === "cash" || order.paymentStatus === "paid";
@@ -343,7 +335,6 @@ const adminController = {
             }
             if (status === "delivered") {
                 order.deliveredAt = new Date();
-
                 if (order.paymentMethod === "cash") {
                     order.paymentStatus = "paid";
                     order.paidAt = new Date();
@@ -421,7 +412,7 @@ const adminController = {
             const stats = await WishList.aggregate([
                 { $unwind: '$products' },
                 { $group: { _id: '$products', count: { $sum: 1 } } },
-                { $sort: { count: 1 } },
+                { $sort: { count: -1 } },
                 { $limit: 5 },
                 {
                     $lookup: {

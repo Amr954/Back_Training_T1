@@ -1,20 +1,12 @@
 const Product = require('../models/product.model')
-const loggerEvent = require('../services/logger.service')
+const loggerEvent = require('../utils/logger.service')
 const { log } = require('winston')
 const logger = loggerEvent('product')
 const cloudinary = require('../.config/cloudinary')
 const uploadToCloudinary = require('../utils/uploadToCloudinary')
-const AppError = require('../services/AppError.service')
-const constantMessages = require('../services/constants')
-// Uploads multiple files in parallel and shapes each result to match
-// the Product schema's images field: { url, publicId }
-/*
-Achiveing Atomicty (مبدا الذرية كله مع بعض او لا):
-   If ANY file fails to upload, we roll back the ones
-that DID succeed (delete them from Cloudinary) and throw — so a caller
-never ends up with a partial set of images silently saved.
-it's similar as financial transaction.
-*/
+const AppError = require('../utils/AppError');
+const constantMessages = require('../utils/constants')
+
 
 const uploadImages = async (files, folder = 'products') => {
     const uploaded = []
@@ -71,7 +63,6 @@ const productController = {
             if (brand) { filter.brand = brand }
 
             if (tags) {
-                // const tagList = Array.isArray(tags) ? tags : tags.split(',')
                 filter.tags = tags
             }
             if (minPrice || maxPrice) {
@@ -167,7 +158,6 @@ const productController = {
             uploadedImages = await uploadImages(req.files)
             req.body.images = uploadedImages
 
-            // tags can arrive as "red,summer" (form-data sends strings) or already as an array
             if (req.body.tags && typeof req.body.tags === 'string') {
                 req.body.tags = req.body.tags.split(',').map(t => t.trim())
             }
@@ -211,7 +201,7 @@ const productController = {
             if (req.body.sku && req.body.sku !== product.sku) {
                 const existingSku = await Product.findOne({
                     sku: req.body.sku,
-                    _id: { $ne: product._id } //هعمل تشيك علي كل المنتجات التانية ما عدا المنتج اللي بغير فيه
+                    _id: { $ne: product._id } 
                 })
                 if (existingSku) {
                     return next(new AppError(constantMessages.PRODUCT_SKU_CHECK, 400))
@@ -233,7 +223,7 @@ const productController = {
 
             const publicIDs = product.images.map(img => img.publicId)
             let newlyUploadedImages = []
-            // upload images first 
+
             try {
                 // upload images first
                 if (hasNewImages) {

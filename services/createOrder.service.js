@@ -44,15 +44,14 @@ const createCashOrder = async (userId, orderDetails) => {
             })
             subtotal += price * item.quantity
         }
-        let discount = cart.discountAmount || 0
-        // let discount = 0
-        // if(cart.coupon && cart.coupon.code){
-        //     if(cart.coupon.discountType === 'percentage'){
-        //         discount = Math.min((subtotal * cart.coupon.discountValue) / 100,subtotal)
-        //     }else{
-        //         discount = Math.min(cart.coupon.discountValue,subtotal)
-        //     }
-        // }
+        let discount = 0
+        if (cart.coupon && cart.coupon.code) {
+            if (cart.coupon.discountType === 'percentage') {
+                discount = Math.min((subtotal * cart.coupon.discountValue) / 100, subtotal)
+            } else {
+                discount = Math.min(cart.coupon.discountValue, subtotal)
+            }
+        }
 
         const shippingFee = subtotal >= 1000 ? 0 : 50
         const tax = subtotal * 0.14
@@ -132,7 +131,14 @@ const createStripeOrder = async (userId, orderDetails) => {
             })
             subtotal += price * item.quantity
         }
-        let discount = cart.discountAmount || 0
+        let discount = 0
+        if (cart.coupon && cart.coupon.code) {
+            if (cart.coupon.discountType === 'percentage') {
+                discount = Math.min((subtotal * cart.coupon.discountValue) / 100, subtotal)
+            } else {
+                discount = Math.min(cart.coupon.discountValue, subtotal)
+            }
+        }
 
         const shippingFee = subtotal >= 1000 ? 0 : 50
         const tax = subtotal * 0.14
@@ -164,8 +170,7 @@ const createStripeOrder = async (userId, orderDetails) => {
                 orderId: order._id.toString(),
             },
         });
-        console.log("PI ID:", paymentIntent.id);
-        console.log("CLIENT SECRET:", paymentIntent.client_secret);
+
         order.transactionId = paymentIntent.id;
         await order.save({ session });
         await session.commitTransaction();
@@ -213,16 +218,12 @@ module.exports = {
     },
 
     stripeWebhook: async (req) => {
-        console.log("🔥 SERVICE HIT");
         const signature = req.headers["stripe-signature"];
-        console.log(Buffer.isBuffer(req.body));
-        console.log(req.body.constructor.name);
         const event = stripe.webhooks.constructEvent(
             req.body,
             signature,
             process.env.STRIPE_WEBHOOK_SECRET_KEY,
         );
-        console.log("EVENT:", event.type);
 
         if (event.type === "payment_intent.payment_failed") {
             const paymentIntent = event.data.object;

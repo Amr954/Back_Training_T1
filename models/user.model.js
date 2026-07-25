@@ -97,6 +97,17 @@ userSchema.methods.compareUserPass = async function (pass) {
     return await bcryptjs.compare(pass, user.password)
 }
 
+userSchema.methods.toJSON = function () {
+    const user = this.toObject()
+    delete user.password
+    delete user.resetPasswordExpires
+    delete user.resetPasswordToken
+    delete user.tokens
+    delete user.__v
+
+    return user
+}
+
 const User = mongoose.model('user', userSchema)
 userSchema.index({ userName: 1 });
 userSchema.index({ role: 1 });

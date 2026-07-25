@@ -1,7 +1,7 @@
 const Cart = require('../models/cart.model')
 const Product = require('../models/product.model')
-const AppError = require('../services/AppError.service');
-const constantMessages = require('../services/constants')
+const AppError = require('../utils/AppError');
+const constantMessages = require('../utils/constants')
 
 /*************** 
   @ Handle Cart Controller

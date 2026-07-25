@@ -1,13 +1,12 @@
 const User = require("../models/user.model")
 const AppError = require("../services/AppError.service")
 const constantMessages = require("../services/constants")
-const loggerEvent = require('../services/logger.service')
+const loggerEvent = require('../utils/logger.service')
 const logger = loggerEvent('auth')
 const jwt = require('jsonwebtoken')
 
 const authentication = async (req, res, next) => {
     try {
-        // console.log(req.cookies);
         const authHeader = req.headers.authorization
 
         const token = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null
@@ -17,7 +16,7 @@ const authentication = async (req, res, next) => {
         const secretKey = process.env.ACCESS_TOKEN_SECRET;
         let valid
         try {
-            valid = jwt.verify(token, secretKey) // sync, no await needed
+            valid = jwt.verify(token, secretKey) 
 
             req.user = await User.findById(valid.id).select("-password -tokens")
             if (!req.user) {

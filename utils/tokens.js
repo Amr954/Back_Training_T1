@@ -26,7 +26,7 @@ function generateRefreshToken(user) {
 // --------------------------------------
 
 function generateResetToken() {
-  const rawToken = crypto.randomBytes(32).toString("hex") // اللي هيتبعت في الإيميل
+  const rawToken = crypto.randomBytes(32).toString("hex")   // اللي هيتبعت في الإيميل
   const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex") // اللي هيتخزن في الداتابيز
   return { rawToken, hashedToken }
 }

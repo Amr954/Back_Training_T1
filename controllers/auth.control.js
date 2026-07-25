@@ -1,7 +1,7 @@
 const User = require('../models/user.model')
 const OTP = require('../models/otp.model')
 const bcryptjs = require('bcryptjs')
-const loggerEvent = require('../services/logger.service')
+const loggerEvent = require('../utils/logger.service')
 const { log } = require('winston')
 const logger = loggerEvent('user')
 const jwt = require('jsonwebtoken')
@@ -10,8 +10,8 @@ const { generateAccessToken, generateRefreshToken, cookieOptions, generateResetT
 const generateOtp = require('../utils/generateOTP')
 const sendEmail = require('../utils/sendEmail')
 const { URL } = require("url")
-const AppError = require('../services/AppError.service')
-const constantMessages = require('../services/constants')
+const AppError = require('../utils/AppError');
+const constantMessages = require('../utils/constants')
 
 
 function buildResetUrl(baseUrl, token, email) {
@@ -133,7 +133,7 @@ const userController = {
             if (!user) {
                 return next(new AppError(constantMessages.INVALID_CREDENTIALS, 401));
             }
-            if (user.isActive === false) return next(new AppError('Your account has been deactivated', 403));
+            if (user.isActive === false) return next(new AppError(constantMessages.ACCOUNT_DEACTIVATED, 403));
 
             if (!user.isVerified) return next(new AppError(constantMessages.EMAIL_NOT_VERIFIED, 403));
 
@@ -145,7 +145,6 @@ const userController = {
             const accessToken = generateAccessToken(user)
             const refreshToken = generateRefreshToken(user)
 
-            // res.cookie("access_token", accessToken, cookieOptions.access)
             res.cookie("refresh_token", refreshToken, cookieOptions.refresh)
 
             user.tokens.push(refreshToken)
@@ -178,17 +177,18 @@ const userController = {
             await user.save()
 
             const resetUrl = buildResetUrl(process.env.FRONTEND_URL, rawToken, email)
-            console.log("RESET URL:", resetUrl) // TEMPORARY — remove once email is wired up
+            console.log("RESET URL:", resetUrl) // TEMPORARY
 
             await sendEmail({
                 to: email,
                 subject: "Reset your password",
-                html: `<p>Click here to reset your password:</p><a href="${resetUrl}">${resetUrl}</a><p>This link expires in 5 minutes.</p>`
+                html: `<p>Click here to reset your password:</p><a href="${resetUrl}">${resetUrl}</a>
+                <p>This link expires in 5 minutes.</p>`
             })
 
             res.status(200).send({ message: "if this email exists, a reset link has been sent" })
 
-        } catch (error) {
+        } catch (err) {
             logger.error(err.message)
             res.status(500).send({ message: err.message })
         }
@@ -197,25 +197,13 @@ const userController = {
     resetPassword: async (req, res, next) => {
         try {
             const { token, newPassword } = req.body
-            console.log("BODY:", req.body)
 
             const hashedIncomingToken = crypto.createHash("sha256").update(token).digest("hex")
             const user = await User.findOne({
                 resetPasswordToken: hashedIncomingToken,
                 resetPasswordExpires: { $gt: Date.now() }
             })
-            if (!user || !user.resetPasswordToken || !user.resetPasswordExpires) {
-                return res.status(400).send({ message: "invalid or expired reset link" })
-            }
-
-            if (user.resetPasswordExpires < Date.now()) {
-                return res.status(400).send({ message: "reset link expired" })
-            }
-
-            if (hashedIncomingToken !== user.resetPasswordToken) {
-                // console.log("FAILED AT CHECK 2 - TOKEN MISMATCH")
-                return res.status(400).send({ message: "invalid or expired reset link" })
-            }
+            if (!user) { return res.status(400).send({ message: "invalid or expired reset link" }) }
 
             user.password = newPassword
             user.resetPasswordToken = undefined
@@ -223,9 +211,7 @@ const userController = {
             user.tokens = []
 
             await user.save()
-
             res.status(200).send({ message: "password reset successfully" })
-
         } catch (err) {
             logger.error(err.message)
             res.status(500).send({ message: err.message })
@@ -252,7 +238,6 @@ const userController = {
                 return res.status(403).send({ message: constantMessages.INVALID_TOKEN })
             }
 
-            // rotate: remove old, issue new pair
             user.tokens = user.tokens.filter(t => t !== refreshToken)
             const newAccessToken = generateAccessToken(user)
             const newRefreshToken = generateRefreshToken(user)
@@ -307,14 +292,14 @@ const userController = {
             const { role } = req.body
             const user = await User.findById(req.params.id);
             if (!user) return next(new AppError(constantMessages.USER_NOT_FOUND, 404));
-            
+
             if (req.params.id === req.user._id.toString()) {
                 return next(new AppError(constantMessages.USER_CANNOT_CHANGE_OWN_ROLE, 400));
             }
-            
+
             user.role = role;
             await user.save();
-            
+
             res.status(200).json({
                 success: true,
                 message: `User role updated to ${role}`,
