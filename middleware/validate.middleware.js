@@ -1,4 +1,4 @@
-const AppError = require('../services/AppError.service')
+const AppError = require('../utils/AppError')
 
 const validate = (Schema, property = 'body') => {
     return (req, res, next) => {
