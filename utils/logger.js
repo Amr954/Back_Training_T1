@@ -1,4 +1,3 @@
-const { get } = require('mongoose');
 const {format , createLogger , transports} = require('winston')
 const {timestamp , combine , printf , errors , json} = format
 
@@ -8,20 +7,24 @@ const logFormat = printf(({level, message, timestamp , stack})=>{
 });
 
 const getLogger = (filename) =>{
-    const logger  = createLogger({
+    const loggerTransports = [
+        new transports.Console(),
+    ];
+    if(process.env.NODE_ENV !== 'production'){
+        loggerTransports.push(
+            new transports.File({filename: `./logs/${filename}.log`}),
+            new transports.File({filename: `./logs/all.log`}),
+        )
+    }
+    return createLogger({
         format: combine(
             timestamp({format : 'YYYY-MM-DD HH-mm-ss'}),
             errors({stack : true}),
             json(),
             logFormat
         ),
-        transports:[
-            new transports.File({filename: `./logs/${filename}.log`}),
-            new transports.File({filename: `./logs/all.log`}),
-            new transports.Console(),
-        ],
+        transports:loggerTransports
     });
-    return logger
 };
 
 module.exports = getLogger

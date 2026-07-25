@@ -1,5 +1,5 @@
 const Product = require('../models/product.model')
-const loggerEvent = require('../utils/logger.service')
+const loggerEvent = require('../utils/logger')
 const { log } = require('winston')
 const logger = loggerEvent('product')
 const cloudinary = require('../.config/cloudinary')

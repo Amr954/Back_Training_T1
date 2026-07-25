@@ -1,7 +1,7 @@
 const User = require("../models/user.model")
 const AppError = require("../utils/AppError")
 const constantMessages = require("../utils/constants")
-const loggerEvent = require('../utils/logger.service')
+const loggerEvent = require('../utils/logger')
 const logger = loggerEvent('auth')
 const jwt = require('jsonwebtoken')
 

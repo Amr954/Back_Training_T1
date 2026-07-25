@@ -1,6 +1,6 @@
 const User = require('../models/user.model')
 const bcryptjs = require('bcryptjs')
-const loggerEvent = require('../utils/logger.service')
+const loggerEvent = require('../utils/logger')
 const { log } = require('winston')
 const logger = loggerEvent('user')
 const cloudinary = require('../.config/cloudinary')
