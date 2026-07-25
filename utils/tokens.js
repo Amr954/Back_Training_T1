@@ -5,7 +5,6 @@ const crypto = require("crypto")
 // --------------------------------------
 
 function generateAccessToken(user) {
-  console.log("ACCESS:", process.env.ACCESS_TOKEN_SECRET);
   return jwt.sign(
     { id: user._id },
     process.env.ACCESS_TOKEN_SECRET,
@@ -16,7 +15,6 @@ function generateAccessToken(user) {
 // --------------------------------------
 
 function generateRefreshToken(user) {
-  console.log("REFRESH:", process.env.REFRESH_TOKEN_SECRET);
   return jwt.sign(
     { id: user._id },
     process.env.REFRESH_TOKEN_SECRET,

@@ -177,7 +177,7 @@ const userController = {
             await user.save()
 
             const resetUrl = buildResetUrl(process.env.FRONTEND_URL, rawToken, email)
-            console.log("RESET URL:", resetUrl) // TEMPORARY
+            // console.log("RESET URL:", resetUrl) // TEMPORARY
 
             await sendEmail({
                 to: email,

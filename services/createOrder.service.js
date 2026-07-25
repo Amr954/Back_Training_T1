@@ -174,21 +174,6 @@ const createStripeOrder = async (userId, orderDetails) => {
         order.transactionId = paymentIntent.id;
         await order.save({ session });
         await session.commitTransaction();
-        // try {
-        //     const emailMessage = `
-        //                 Thanks for order from us!
-        //                 orderId: ${order[0]._id}
-        //                 Total Price: ${order[0].totalPrice.toFixed(2)}
-        //                 ;
-        //             `
-        //     await sendEmail({
-        //         to: req.user.email,
-        //         subject: "Order Confirmation!",
-        //         text: emailMessage
-        //     })
-        // } catch (error) {
-        //     console.error('order confirmation could not be sent', error)
-        // }
         return {
             orderId: order._id,
 

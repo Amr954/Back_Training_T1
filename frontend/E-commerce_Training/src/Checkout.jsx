@@ -11,8 +11,6 @@ function Checkout() {
  const pay = async (e) => {
   e.preventDefault();
 
-  console.log("PAY CLICKED");
-
   if (!stripe || !elements) {
     console.log("Stripe not ready");
     return;
@@ -25,14 +23,10 @@ function Checkout() {
       },
   });
 
-  // console.log("RESULT:", result);
-
   if (result.error) {
     console.log(result.error);
     return;
   }
-
-  // console.log("STATUS:", result.paymentIntent.status);
 };
 
   return (

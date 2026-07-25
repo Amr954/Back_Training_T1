@@ -5,7 +5,6 @@ import { loadStripe } from "@stripe/stripe-js";
 import Checkout from "./Checkout";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-console.log(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 function App() {
   const [clientSecret, setClientSecret] = useState("");
 
