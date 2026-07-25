@@ -1,4 +1,5 @@
 const User = require("../models/user.model")
+const AppError = require("../services/AppError.service")
 const constantMessages = require("../services/constants")
 const loggerEvent = require('../services/logger.service')
 const logger = loggerEvent('auth')

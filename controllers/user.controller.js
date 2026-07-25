@@ -194,16 +194,12 @@ const userController = {
     changeUserPassword: async (req, res, next) => {
         try {
             const { oldPassword, newPassword } = req.body;
+            if (oldPassword === newPassword) {
+                return next(new AppError(constantMessages.SAME_PASSWORD, 400));
+            }
             const user = await User.findById(req.user.id).select('+password')
             if (!user) {
                 return next(new AppError(constantMessages.INVALID_CREDENTIALS, 400))
-            }
-
-            const existingPassword = await bcryptjs.compare(
-                oldPassword, req.user.password
-            )
-            if (existingPassword) {
-                return next(new AppError(constantMessages.SAME_PASSWORD, 400))
             }
 
             const isMatch = await user.compareUserPass(oldPassword)
@@ -212,7 +208,7 @@ const userController = {
             }
             user.password = newPassword
             await user.save()
-            
+
             res.status(200).json({
                 success: true,
                 message: constantMessages.PASSWORD_UPDATED

@@ -82,3 +82,10 @@
 2026-07-08 18-28-27 | ERROR | user validation failed: password: Path `password` is required.
 2026-07-08 18-30-25 | ERROR | E11000 duplicate key error collection: test.users index: email_1 dup key: { email: "omar@gmail.com" }
 2026-07-08 18-37-31 | ERROR | Cannot read properties of undefined (reading 'userName')
+2026-07-25 01-16-16 | INFO | amrzhaar2006@gmail.com
+2026-07-25 01-16-51 | INFO | amrrzhaar2006@gmail.com
+2026-07-25 01-24-35 | INFO | amrrzhaar2006@gmail.com
+2026-07-25 01-24-48 | INFO | amrrzhaar2006@gmail.com
+2026-07-25 01-25-53 | INFO | amrrzhaar2006@gmail.com
+2026-07-25 01-45-20 | ERROR | Illegal arguments: string, undefined
+2026-07-25 01-46-36 | ERROR | Illegal arguments: string, undefined

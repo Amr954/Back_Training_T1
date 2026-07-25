@@ -10,9 +10,7 @@ const newUserSchema = Joi.object({
         tlds: { allow: ['com', 'net'] },
     }).required(),
 
-    password: Joi.string().pattern(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$/
-    )
+    password: Joi.string().pattern(PASSWORD_PATTERN)
         .required()
         .min(8)
         .messages({

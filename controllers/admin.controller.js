@@ -86,12 +86,9 @@ const adminController = {
                 //6-TotalAdmins
                 Product.countDocuments(),
 
-                //7-Recent orders
-                Order.find().sort('-createdAt').limit(5).populate('user', 'userName').lean(),
-
-                //8-Top products by sale
+                //7-Top products by sale
                 Order.aggregate([
-                    { $match: { status: 'delivered' } },
+                    { $match: { paymentStatus: 'paid' } },
                     { $unwind: '$items' },
                     {
                         $group: {
@@ -105,6 +102,9 @@ const adminController = {
                     { $sort: { totalSold: -1 } },
                     { $limit: 5 }
                 ]),
+                //8-Recent orders
+                Order.find().sort('-createdAt').limit(5).populate('user', 'userName email').lean(),
+
 
                 //9-daily revenue
                 Order.aggregate([
@@ -184,15 +184,14 @@ const adminController = {
             const page = Math.max(parseInt(req.query.page) || 1, 1)
             const limit = Math.min(Math.max(parseInt(req.query.limit) || 5, 1), 100)
             const skip = (page - 1) * limit
-            const filter = { 'items.0': { $exists: true } }
             const [carts, totalItems] = await Promise.all([
-                Cart.find(filter)
+                Cart.find()
                     .populate('user', 'userName email')
                     .skip(skip)
                     .limit(limit)
                     .sort('-createdAt')
                     .lean(),
-                Cart.countDocuments(filter)
+                Cart.countDocuments()
             ]);
             res.status(200).json({
                 success: true,
@@ -333,11 +332,11 @@ const adminController = {
                 // if the order is cancelled restore the stock 
                 if (restoreStock) {
                     await Promise.all(
-                        order.items.map((item) => {
+                        order.items.map((item) => 
                             Product.findByIdAndUpdate(
                                 item.product, { $inc: { stock: item.quantity, }, }
                             )
-                        })
+                        )
                     )
                 }
                 order.cancelledAt = Date.now()

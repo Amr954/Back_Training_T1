@@ -131,3 +131,10 @@
 2026-07-21 20-16-43 | WARN | ["Shipping address is required","\"productId\" is not allowed","\"quantity\" is not allowed"]
 2026-07-24 21-15-32 | ERROR | user is not defined
 2026-07-24 21-19-46 | ERROR | user is not defined
+2026-07-25 01-16-16 | INFO | amrzhaar2006@gmail.com
+2026-07-25 01-16-51 | INFO | amrrzhaar2006@gmail.com
+2026-07-25 01-24-35 | INFO | amrrzhaar2006@gmail.com
+2026-07-25 01-24-48 | INFO | amrrzhaar2006@gmail.com
+2026-07-25 01-25-53 | INFO | amrrzhaar2006@gmail.com
+2026-07-25 01-45-20 | ERROR | Illegal arguments: string, undefined
+2026-07-25 01-46-36 | ERROR | Illegal arguments: string, undefined
