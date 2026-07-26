@@ -282,28 +282,10 @@ This project covers:
 
 ---
 
-## 🤝 Contributing
-
-This is a training project. Feel free to fork and customize it for your learning purposes.
-
----
-
-## 📝 License
-
-ISC License - See LICENSE file for details
-
----
-
 ## 👤 Author
 
 **Amr954**
 - GitHub: [@Amr954](https://github.com/Amr954)
-
----
-
-## 📞 Support
-
-For issues, questions, or suggestions, please open an [issue](https://github.com/Amr954/Back_Training_T1/issues) on GitHub.
 
 ---
 
