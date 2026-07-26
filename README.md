@@ -1,4 +1,4 @@
-# Back_Training_T1 - E-Commerce Training API
+# E-Commerce Training API
 
 A full-stack e-commerce platform built with Node.js/Express backend and React frontend. This project demonstrates modern web development practices including authentication, payment processing, file uploads, and database management.
 
