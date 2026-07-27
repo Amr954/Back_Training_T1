@@ -57,7 +57,7 @@ cartSchema.virtual('discountAmount').get(function () {
         return (this.subtotal * this.coupon.discountValue) / 100
     }
     if (this.coupon.discountType === 'fixed') {
-        return Math.min(this.coupon.discountValue, subtotal)
+        return Math.min(this.coupon.discountValue, this.subtotal)
     }
     return 0
 })
