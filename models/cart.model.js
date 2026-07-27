@@ -57,18 +57,18 @@ cartSchema.virtual('discountAmount').get(function () {
         return (this.subtotal * this.coupon.discountValue) / 100
     }
     if (this.coupon.discountType === 'fixed') {
-        return this.coupon.discountValue
+        return Math.min(this.coupon.discountValue, subtotal)
     }
     return 0
 })
 
 //@ total (virtual)
-cartSchema.virtual('total').get(function(){
+cartSchema.virtual('total').get(function () {
     return this.subtotal - this.discountAmount
 })
 
 //@ itemCount (virtual)
-cartSchema.virtual('itemCount').get(function(){
+cartSchema.virtual('itemCount').get(function () {
     return this.items.reduce((count, item) => count + item.quantity, 0)
 })
 

@@ -77,7 +77,7 @@ const userController = {
             }
             const [users, totalItems] = await Promise.all([
                 User.find(filter)
-                    .select('-password -tokens -resetPasswordToken -resetPasswordExpires') // hide sensitive fields')
+                    .select('-password -tokens -resetPasswordToken -resetPasswordExpires')
                     .sort({ _id: -1 })
                     .skip(skip)
                     .limit(limit),
@@ -170,7 +170,7 @@ const userController = {
             if (!user) { return next(new AppError(constantMessages.USER_NOT_FOUND, 404)) }
 
             if (existingAvatarPublicId) {
-                await cloudinary.uploader.destroy(existingUser.avatar.publicId)
+                await cloudinary.uploader.destroy(existingAvatarPublicId)
             }
 
             res.status(200).json({

@@ -135,7 +135,6 @@ const orderController = {
                 order.paymentStatus = "refunded";
             }
 
-            // if the order is cancelled restore the stock 
             if (restoreStock) {
                 for (const item of order.items) {
                     await Product.findByIdAndUpdate(

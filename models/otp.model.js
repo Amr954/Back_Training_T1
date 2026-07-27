@@ -20,7 +20,6 @@ otpSchema.pre('save', async function(next){
     try {
         if(this.isModified('otp')){
             const salt = await bcryptjs.genSalt(8)
-            console.log(salt)
             this.otp= await bcryptjs.hash(this.otp,salt)
         }
     }
