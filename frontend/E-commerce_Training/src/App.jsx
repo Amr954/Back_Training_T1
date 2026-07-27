@@ -24,7 +24,7 @@ const createOrder = async () => {
       },
       {
         headers: {
-          Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNGI1YTVmYmY1ZGZjMTY3NjQ1NWE1MSIsImlhdCI6MTc4NDkxNzQxNiwiZXhwIjoxNzg0OTE5MjE2fQ.Am6kf8ilT6v5g6TYL0Kz6To82-spHsV2SnaCuz7a-Vk",
+          Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNGI1YTVmYmY1ZGZjMTY3NjQ1NWE1MSIsImlhdCI6MTc4NTEyNDM2NCwiZXhwIjoxNzg1MTI2MTY0fQ.SImHVqpCV2TPZf4_zplNDGIPYMf0apVBeJqkTz6rWNE",
         },
       }
     );
