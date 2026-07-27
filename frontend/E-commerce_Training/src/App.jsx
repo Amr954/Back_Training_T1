@@ -10,7 +10,7 @@ function App() {
 
 const createOrder = async () => {
     const res = await axios.post(
-      "https://back-training-t1.vercel.app/api/orders",
+      "http://localhost:5000/api/orders",
       {
         paymentMethod: "stripe",
         shippingAddress: {
