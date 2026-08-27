@@ -259,7 +259,7 @@ const userController = {
     getUser: async (req, res, next) => {
         try {
             let user = await User.findById(req.user._id)
-            res.status(200).json({ success: true, data: user });
+            res.status(200).json({ success: true, userData: user });
         } catch (err) {
             logger.error(err.message)
             next(err)
