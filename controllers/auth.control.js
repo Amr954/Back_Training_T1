@@ -296,7 +296,9 @@ const userController = {
 
         // Atomic update — no .save(), no version check, can't race
         await User.findByIdAndUpdate(user._id, {
-            $pull: { tokens: refreshToken },
+            $pull: { tokens: refreshToken }
+        })
+        await User.findByIdAndUpdate(user._id, {
             $push: { tokens: newRefreshToken }
         })
 
