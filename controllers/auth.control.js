@@ -218,43 +218,98 @@ const userController = {
         }
     },
 
+    // refresh: async (req, res, next) => {
+    //     try {
+    //         const refreshToken = req.cookies?.refresh_token
+    //         if (!refreshToken) {
+    //             return res.status(401).send({ message: "no refresh token provided" })
+    //         }
+    //         let decoded;
+    //         try {
+    //             decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET)
+    //         } catch (err) {
+    //             return res.status(403).send({ message: "refresh token expired or invalid" })
+    //         }
+
+    //         const user = await User.findById(decoded.id)
+    //         if (!user || user.isActive === false) return next(new AppError(constantMessages.USER_NOT_FOUND, 401));
+
+    //         if (!user || !user.tokens.includes(refreshToken)) {
+    //             return res.status(403).send({ message: constantMessages.INVALID_TOKEN })
+    //         }
+
+    //         user.tokens = user.tokens.filter(t => t !== refreshToken)
+    //         const newAccessToken = generateAccessToken(user)
+    //         const newRefreshToken = generateRefreshToken(user)
+    //         // user.tokens.push(newRefreshToken)
+    //         // await user.save()
+
+    //         const updatedUser = await User.findByIdAndUpdate(
+    //             user._id,
+    //             {
+    //                 $pull: { tokens: refreshToken },
+    //             },
+    //             { new: true }
+    //         )
+    //         await User.findByIdAndUpdate(
+    //             user._id,
+    //             { $push: { tokens: newRefreshToken } },
+    //             { new: true }
+    //         )
+
+    //         res.cookie("refresh_token", newRefreshToken, cookieOptions.refresh)
+
+    //         res.status(200).json({
+    //             message: "token refreshed",
+    //             newAccessToken
+    //         })
+    //     } catch (err) {
+    //         logger.error(err.message)
+    //         next(err)
+    //     }
+    // },
+
     refresh: async (req, res, next) => {
-        try {
-            const refreshToken = req.cookies?.refresh_token
-            if (!refreshToken) {
-                return res.status(401).send({ message: "no refresh token provided" })
-            }
-            let decoded;
-            try {
-                decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET)
-            } catch (err) {
-                return res.status(403).send({ message: "refresh token expired or invalid" })
-            }
-
-            const user = await User.findById(decoded.id)
-            if (!user || user.isActive === false) return next(new AppError(constantMessages.USER_NOT_FOUND, 401));
-
-            if (!user || !user.tokens.includes(refreshToken)) {
-                return res.status(403).send({ message: constantMessages.INVALID_TOKEN })
-            }
-
-            user.tokens = user.tokens.filter(t => t !== refreshToken)
-            const newAccessToken = generateAccessToken(user)
-            const newRefreshToken = generateRefreshToken(user)
-            user.tokens.push(newRefreshToken)
-            await user.save()
-
-            res.cookie("refresh_token", newRefreshToken, cookieOptions.refresh)
-
-            res.status(200).json({
-                message: "token refreshed",
-                newAccessToken
-            })
-        } catch (err) {
-            logger.error(err.message)
-            next(err)
+    try {
+        const refreshToken = req.cookies?.refresh_token
+        if (!refreshToken) {
+            return res.status(401).send({ message: "no refresh token provided" })
         }
-    },
+
+        let decoded
+        try {
+            decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET)
+        } catch (err) {
+            return res.status(403).send({ message: "refresh token expired or invalid" })
+        }
+
+        const user = await User.findById(decoded.id)
+        if (!user || user.isActive === false) {
+            return next(new AppError(constantMessages.USER_NOT_FOUND, 401))
+        }
+        if (!user.tokens.includes(refreshToken)) {
+            return res.status(403).send({ message: constantMessages.INVALID_TOKEN })
+        }
+
+        const newAccessToken = generateAccessToken(user)
+        const newRefreshToken = generateRefreshToken(user)
+
+        // Atomic update — no .save(), no version check, can't race
+        await User.findByIdAndUpdate(user._id, {
+            $pull: { tokens: refreshToken },
+            $push: { tokens: newRefreshToken }
+        })
+
+        res.cookie("refresh_token", newRefreshToken, cookieOptions.refresh)
+        res.status(200).json({
+            message: "token refreshed",
+            token: newAccessToken
+        })
+    } catch (err) {
+        logger.error(err.message)
+        next(err)
+    }
+},
 
     getUser: async (req, res, next) => {
         try {
