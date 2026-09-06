@@ -64,8 +64,8 @@ const userController = {
             if (role) {
                 filter.role = role
             }
-            if (isVerified) {
-                filter.isVerified = isVerified
+            if (isVerified !== undefined) {
+                filter.isVerified = isVerified === "true"
             }
             if (search) {
                 const safeSearch = escapeRegex(search)
