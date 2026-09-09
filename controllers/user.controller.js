@@ -39,7 +39,7 @@ const userController = {
             res.status(201).json({
                 success: true,
                 message: "User created successfully",
-                data: user
+                userData: user
             })
         } catch (err) {
             if (uploadedPublicId) {
@@ -108,7 +108,7 @@ const userController = {
             if (!user) {
                 return next(new AppError(constantMessages.USER_NOT_FOUND, 404))
             }
-            res.status(200).json({ success: true, data: user })
+            res.status(200).json({ success: true, userData: user })
         } catch (err) {
             logger.error(err.message)
             next(err)
@@ -232,7 +232,7 @@ const userController = {
 
             res.status(200).json({
                 success: true,
-                data: {}
+                userData: {}
             })
         } catch (err) {
             logger.error(err.message)
