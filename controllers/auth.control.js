@@ -9,6 +9,7 @@ const crypto = require("crypto")
 const { generateAccessToken, generateRefreshToken, cookieOptions, generateResetToken } = require("../utils/tokens");
 const generateOtp = require('../utils/generateOTP')
 const sendEmail = require('../utils/sendEmail')
+const roleChangedEmail = require('../emails/templates/roleChange')
 const { URL } = require("url")
 const AppError = require('../utils/AppError');
 const constantMessages = require('../utils/constants')
@@ -218,100 +219,49 @@ const userController = {
         }
     },
 
-    // refresh: async (req, res, next) => {
-    //     try {
-    //         const refreshToken = req.cookies?.refresh_token
-    //         if (!refreshToken) {
-    //             return res.status(401).send({ message: "no refresh token provided" })
-    //         }
-    //         let decoded;
-    //         try {
-    //             decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET)
-    //         } catch (err) {
-    //             return res.status(403).send({ message: "refresh token expired or invalid" })
-    //         }
-
-    //         const user = await User.findById(decoded.id)
-    //         if (!user || user.isActive === false) return next(new AppError(constantMessages.USER_NOT_FOUND, 401));
-
-    //         if (!user || !user.tokens.includes(refreshToken)) {
-    //             return res.status(403).send({ message: constantMessages.INVALID_TOKEN })
-    //         }
-
-    //         user.tokens = user.tokens.filter(t => t !== refreshToken)
-    //         const newAccessToken = generateAccessToken(user)
-    //         const newRefreshToken = generateRefreshToken(user)
-    //         // user.tokens.push(newRefreshToken)
-    //         // await user.save()
-
-    //         const updatedUser = await User.findByIdAndUpdate(
-    //             user._id,
-    //             {
-    //                 $pull: { tokens: refreshToken },
-    //             },
-    //             { new: true }
-    //         )
-    //         await User.findByIdAndUpdate(
-    //             user._id,
-    //             { $push: { tokens: newRefreshToken } },
-    //             { new: true }
-    //         )
-
-    //         res.cookie("refresh_token", newRefreshToken, cookieOptions.refresh)
-
-    //         res.status(200).json({
-    //             message: "token refreshed",
-    //             newAccessToken
-    //         })
-    //     } catch (err) {
-    //         logger.error(err.message)
-    //         next(err)
-    //     }
-    // },
-
     refresh: async (req, res, next) => {
-    try {
-        const refreshToken = req.cookies?.refresh_token
-        if (!refreshToken) {
-            return res.status(401).send({ message: "no refresh token provided" })
-        }
-
-        let decoded
         try {
-            decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET)
+            const refreshToken = req.cookies?.refresh_token
+            if (!refreshToken) {
+                return res.status(401).send({ message: "no refresh token provided" })
+            }
+
+            let decoded
+            try {
+                decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET)
+            } catch (err) {
+                return res.status(403).send({ message: "refresh token expired or invalid" })
+            }
+
+            const user = await User.findById(decoded.id)
+            if (!user || user.isActive === false) {
+                return next(new AppError(constantMessages.USER_NOT_FOUND, 401))
+            }
+            if (!user.tokens.includes(refreshToken)) {
+                return res.status(403).send({ message: constantMessages.INVALID_TOKEN })
+            }
+
+            const newAccessToken = generateAccessToken(user)
+            const newRefreshToken = generateRefreshToken(user)
+
+            // Atomic update — no .save(), no version check, can't race
+            await User.findByIdAndUpdate(user._id, {
+                $pull: { tokens: refreshToken }
+            })
+            await User.findByIdAndUpdate(user._id, {
+                $push: { tokens: newRefreshToken }
+            })
+
+            res.cookie("refresh_token", newRefreshToken, cookieOptions.refresh)
+            res.status(200).json({
+                message: "token refreshed",
+                token: newAccessToken
+            })
         } catch (err) {
-            return res.status(403).send({ message: "refresh token expired or invalid" })
+            logger.error(err.message)
+            next(err)
         }
-
-        const user = await User.findById(decoded.id)
-        if (!user || user.isActive === false) {
-            return next(new AppError(constantMessages.USER_NOT_FOUND, 401))
-        }
-        if (!user.tokens.includes(refreshToken)) {
-            return res.status(403).send({ message: constantMessages.INVALID_TOKEN })
-        }
-
-        const newAccessToken = generateAccessToken(user)
-        const newRefreshToken = generateRefreshToken(user)
-
-        // Atomic update — no .save(), no version check, can't race
-        await User.findByIdAndUpdate(user._id, {
-            $pull: { tokens: refreshToken }
-        })
-        await User.findByIdAndUpdate(user._id, {
-            $push: { tokens: newRefreshToken }
-        })
-
-        res.cookie("refresh_token", newRefreshToken, cookieOptions.refresh)
-        res.status(200).json({
-            message: "token refreshed",
-            token: newAccessToken
-        })
-    } catch (err) {
-        logger.error(err.message)
-        next(err)
-    }
-},
+    },
 
     getUser: async (req, res, next) => {
         try {
@@ -351,12 +301,28 @@ const userController = {
             const user = await User.findById(req.params.id);
             if (!user) return next(new AppError(constantMessages.USER_NOT_FOUND, 404));
 
+            const oldRole = user.role
+
             if (req.params.id === req.user._id.toString()) {
                 return next(new AppError(constantMessages.USER_CANNOT_CHANGE_OWN_ROLE, 400));
             }
 
             user.role = role;
             await user.save();
+
+            const email = roleChangedEmail({
+                userName: user.userName,
+                oldRole,
+                newRole: user.role,
+            });
+
+
+            await sendEmail({
+                to: user.email,
+                subject: email.subject,
+                text: email.text,
+                html: email.html,
+            });
 
             res.status(200).json({
                 success: true,
