@@ -66,11 +66,11 @@ const userController = {
             }
 
             if (isActive !== undefined) {
-                filter.isActive = isActive === "true" || isActive === "true"
+                filter.isActive = isActive === "true" || isActive === true
             }
 
             if (isVerified !== undefined) {
-                filter.isVerified = isVerified === "true" || isVerified === "true"
+                filter.isVerified = isVerified === "true" || isVerified === true
             }
             if (search) {
                 const safeSearch = escapeRegex(search)
