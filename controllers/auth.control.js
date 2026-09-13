@@ -327,7 +327,7 @@ const userController = {
             res.status(200).json({
                 success: true,
                 message: `User role updated to ${role}`,
-                data: user
+                userData: user
             })
         } catch (err) {
             logger.error(err.message)
