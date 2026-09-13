@@ -1,4 +1,4 @@
-export const roleChangedEmail = ({
+ const roleChangedEmail = ({
     userName,
     oldRole,
     newRole,
@@ -221,3 +221,5 @@ Alpha Store Team
 </html>
 `,
 });
+
+module.exports = roleChangedEmail
