@@ -65,9 +65,13 @@ const userController = {
                 filter.role = role
             }
 
-            if (isActive !== undefined) {
-                filter.isActive = isActive === "true" || isActive === true
-            }
+            // if (isActive !== undefined) {
+            //     filter.isActive = isActive === "true" || isActive === true
+            // }
+
+            filter.isActive = isActive !== undefined
+                ? (isActive === "true" || isActive === true)
+                : true
 
             if (isVerified !== undefined) {
                 filter.isVerified = isVerified === "true" || isVerified === true
