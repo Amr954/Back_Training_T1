@@ -59,11 +59,16 @@ const userController = {
             const page = Math.max(parseInt(req.query.page) || 1, 1)
             const limit = Math.min(Math.max(parseInt(req.query.limit) || 5, 1), 100) // default 5 user max 100
             const skip = (page - 1) * limit
-            const { search, role, isVerified } = req.query
+            const { search, role, isActive, isVerified } = req.query
             const filter = {}
             if (role) {
                 filter.role = role
             }
+
+            if (isActive !== undefined) {
+                filter.isActive = isActive === "true" || isActive === "true"
+            }
+
             if (isVerified !== undefined) {
                 filter.isVerified = isVerified === "true" || isVerified === "true"
             }
