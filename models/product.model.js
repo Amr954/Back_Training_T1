@@ -63,6 +63,11 @@ const productSchema = new Schema({
         min: 0
     },
 
+    outOfStock: {
+        type: Boolean,
+        default: false
+    },
+
     sku: {
         type: String
     },

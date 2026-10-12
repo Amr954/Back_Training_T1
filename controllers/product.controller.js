@@ -201,7 +201,7 @@ const productController = {
             if (req.body.sku && req.body.sku !== product.sku) {
                 const existingSku = await Product.findOne({
                     sku: req.body.sku,
-                    _id: { $ne: product._id } 
+                    _id: { $ne: product._id }
                 })
                 if (existingSku) {
                     return next(new AppError(constantMessages.PRODUCT_SKU_CHECK, 400))
@@ -235,15 +235,15 @@ const productController = {
                     let idToDelete;
                     try {
                         idToDelete = JSON.parse(req.body.imagesToDelete)
-                    
+
                     } catch (parseError) {
                         throw new AppError('imagesToDelete must be valid JSON', 400)
                     }
-                    
+
                     if (!Array.isArray(idToDelete)) {
                         throw new AppError('imagesToDelete must be an array', 400)
                     }
-                    
+
                     const validIdToDelete = idToDelete.filter(id => publicIDs.includes(id))
 
                     if (validIdToDelete.length > 0) {
@@ -369,6 +369,26 @@ const productController = {
                 return next(new AppError(constantMessages.PRODUCT_NOT_FOUND, 404))
             }
             res.status(200).json({ success: true, data: product.reviews })
+        } catch (error) {
+            next(error)
+        }
+    },
+
+    getProductsStats: async (_req, res, next) => {
+        try {
+            const [results] = await Product.aggregate([
+                {
+                    $group: {
+                        _id: null,
+                        totalProducts: { $sum: 1 },
+                        featured: { $sum: { $cond: ['$featured', 1, 0] } },
+                        inStock: { $sum: { $cond: [{ $gt: ['$stock', 0] }, 1, 0] } },
+                        outOfStock: { $sum: { $cond: [{ $eq: ['$stock', 0] }, 1, 0] } },
+                    }
+                },
+                { $project: { _id: 0 } }
+            ])
+            res.status(200).json(results ?? { totalProducts: 0, featured: 0, inStock: 0, outOfStock: 0 })
         } catch (error) {
             next(error)
         }

@@ -10,6 +10,7 @@ const { createProductSchema, updateProductSchema, addReviewSchema } = require('.
 
 router.get('/', productController.getProducts)
 router.get('/search', productController.getProducts)
+router.get('/stats', productController.getProductsStats)
 router.get('/:id', productController.getProduct)
 router.get('/:id/reviews', productController.getReviews)
 
