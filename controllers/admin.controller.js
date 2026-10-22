@@ -241,7 +241,7 @@ const adminController = {
             let sortBy = sort ? sort.split(',').join(' ') : '-createdAt'
             const [orders, total] = await Promise.all([
                 Order.find(filter)
-                    .populate('user', 'userName email')
+                    .populate('user', 'userName email isActive')
                     .skip(skip)
                     .limit(Number(limit))
                     .sort(sortBy)
