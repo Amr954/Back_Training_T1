@@ -218,10 +218,11 @@ const adminController = {
             const page = Math.max(parseInt(req.query.page) || 1, 1)
             const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 100)
             const skip = (page - 1) * limit
-            const { status, paymentStatus, from, to, sort } = req.query
+            const {search,status, paymentStatus,method, from, to, sort } = req.query
             let filter = {}
             if (status) filter.status = status
             if (paymentStatus) filter.paymentStatus = paymentStatus
+            if (method) filter.paymentMethod = method
             if (from || to) {
                 filter.createdAt = {}
                 if (from) {
@@ -238,6 +239,16 @@ const adminController = {
                     return next(new AppError('"from" date must be before "to" date', 400))
                 }
             }
+
+            if(search){
+                const safeSearch = escapeRegex(search)
+                const regex= new RegExp(safeSearch,'i')
+                filter.$or=[
+                    {_id: regex},
+                    {'user.userName': regex},
+                ]
+            }
+
             let sortBy = sort ? sort.split(',').join(' ') : '-createdAt'
             const [orders, total] = await Promise.all([
                 Order.find(filter)
