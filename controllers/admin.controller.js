@@ -144,11 +144,11 @@ const adminController = {
             const totalRevenues = totalRevenue[0]?.total || 0
             const thisMonthRevenue = thisMonthRevenueResult[0]?.total || 0
             const lastMonthRevenue = lastMonthRevenueResult[0]?.total || 0
-            let growthPercentRate; 
-            if(lastMonthRevenue > 0){
-                growthPercentRate= Math.round(((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100)
-            }else{
-                 growthPercentRate = thisMonthRevenue > 0 ? 100 : 0
+            let growthPercentRate;
+            if (lastMonthRevenue > 0) {
+                growthPercentRate = Math.round(((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100)
+            } else {
+                growthPercentRate = thisMonthRevenue > 0 ? 100 : 0
             }
 
             res.status(200).json({
@@ -218,7 +218,7 @@ const adminController = {
             const page = Math.max(parseInt(req.query.page) || 1, 1)
             const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 100)
             const skip = (page - 1) * limit
-            const {search,status, paymentStatus,method, from, to, sort } = req.query
+            const { search, status, paymentStatus, method, from, to, sort } = req.query
             let filter = {}
             if (status) filter.status = status
             if (paymentStatus) filter.paymentStatus = paymentStatus
@@ -240,12 +240,25 @@ const adminController = {
                 }
             }
 
-            if(search){
-                const safeSearch = escapeRegex(search)
-                const regex= new RegExp(safeSearch,'i')
-                filter.$or=[
-                    {_id: regex},
-                    {'user.userName': regex},
+            if (typeof search === 'string' && search.trim()) {
+                const term = search.trim().replace(/^#/, '');
+                const safeSearch = escapeRegex(term)
+                const regex = new RegExp(safeSearch, 'i')
+
+                const matchedUsers = await User.find({ userName: regex }).select('_id').lean()
+                const userIds = matchedUsers.map((u) => u._id)
+                filter.$or = [
+                    { user: { $in: userIds } },
+                    {
+                        $expr: {
+                            $regexMatch: {
+                                input: { $toString: '$_id' },
+                                regex: safeSearch,
+                                options: 'i'
+                            }
+                        }
+                    }
+
                 ]
             }
 
@@ -282,7 +295,7 @@ const adminController = {
 
     getSingleOrder: async (req, res, next) => {
         try {
-            const order = await Order.findOne({_id: req.params.id}).populate('user', 'userName email phone').lean()
+            const order = await Order.findOne({ _id: req.params.id }).populate('user', 'userName email phone').lean()
             if (!order) { return next(new AppError(constantMessages.ORDER_NOT_FOUND, 404)) }
             res.status(200).json({ success: true, data: order })
         } catch (error) {
@@ -320,7 +333,7 @@ const adminController = {
             if (!allowedTransition || !allowedTransition.includes(status)) {
                 return next(new AppError('Cannot complete this status transition because it is not allowed', 400))
             }
-            
+
             if (status === 'cancelled') {
                 const restoreStock =
                     order.paymentMethod === "cash" || order.paymentStatus === "paid";
@@ -335,7 +348,7 @@ const adminController = {
                 // if the order is cancelled restore the stock 
                 if (restoreStock) {
                     await Promise.all(
-                        order.items.map((item) => 
+                        order.items.map((item) =>
                             Product.findByIdAndUpdate(
                                 item.product, { $inc: { stock: item.quantity, }, }
                             )
