@@ -20,6 +20,9 @@ const { warn } = require('winston')
 6- PATCH update order status
 */
 
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+
 const adminController = {
     //@ GET admin dashboard
     //@ get/admin/dashboard
