@@ -205,7 +205,7 @@ const adminController = {
                     totalItems,
                     totalPages: Math.ceil(totalItems / limit)
                 },
-                data: carts
+                cartData: carts
             });
         } catch (error) {
             next(error)
@@ -279,7 +279,7 @@ const adminController = {
                 success: true,
                 message: `count of orders ${orders.length}`,
                 total,
-                data: orders,
+                orderData: orders,
                 pagination: {
                     page,
                     limit,
@@ -300,7 +300,7 @@ const adminController = {
         try {
             const order = await Order.findOne({ _id: req.params.id }).populate('user', 'userName email phone').lean()
             if (!order) { return next(new AppError(constantMessages.ORDER_NOT_FOUND, 404)) }
-            res.status(200).json({ success: true, data: order })
+            res.status(200).json({ success: true, orderData: order })
         } catch (error) {
             next(error)
         }
@@ -390,7 +390,7 @@ const adminController = {
             } catch (error) {
                 console.error('Order status email could not be sent:', error.message);
             }
-            res.status(200).json({ success: true, data: order })
+            res.status(200).json({ success: true, orderData: order })
         } catch (error) {
             next(error)
         }
@@ -423,7 +423,7 @@ const adminController = {
                     totalItems,
                     totalPages: Math.ceil(totalItems / limit)
                 },
-                data: wishlists
+                wihsListData: wishlists
             });
         } catch (error) {
             next(error)
@@ -459,7 +459,7 @@ const adminController = {
                     }
                 }
             ])
-            res.status(200).json({ success: true, data: stats })
+            res.status(200).json({ success: true, wishListData: stats })
         } catch (error) {
             next(error)
         }
