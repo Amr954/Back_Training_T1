@@ -6,6 +6,7 @@ const User = require('../models/user.model')
 const stripe = require('../.config/stripe.config')
 const AppError = require('../utils/AppError');
 const constantMessages = require('../utils/constants')
+const orderStatusChangedEmail = require('../emails/templates/orderStatusChange')
 const sendEmail = require('../utils/sendEmail')
 const { warn } = require('winston')
 
@@ -326,6 +327,8 @@ const adminController = {
                 returned: []
             }
 
+            const oldStatus = order.status
+
             if (order.status === 'cancelled') {
                 throw new AppError('Order already cancelled', 400)
             }
@@ -373,19 +376,18 @@ const adminController = {
             }
             await order.save()
             try {
-                const emailMessage = `
-                Hi ${order.user.userName},
- 
-                Your order status has been updated.
- 
-                Order ID: ${order._id}
-                New Status: ${status}
-                ${adminNote ? `Note from our team: ${adminNote}` : ''}
-            `
+                const emailMessage = orderStatusChangedEmail({
+                    userName: order.user.userName,
+                    orderId: order._id,
+                    oldStatus,
+                    newStatus:order.status,
+                    adminNote,
+                })
                 await sendEmail({
                     to: order.user.email,
-                    subject: 'Your Order Status Has Been Updated',
-                    text: emailMessage
+                    subject: emailMessage.subject,
+                    text: emailMessage.text,
+                    html:emailMessage.html
                 })
             } catch (error) {
                 console.error('Order status email could not be sent:', error.message);
