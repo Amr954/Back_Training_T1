@@ -41,7 +41,10 @@ const updateOrderStatusSchema = Joi.object({
         .required().messages({
             'valid.Status':'Invalid order status provided',
              'status_required':'Status required'   
-        }) 
+        }),
+    adminNote: Joi.string().max(1000).allow('').optional().messages({
+        'string.max': 'Note cannot exceed 1000 characters'
+    })     
         
 });
 
